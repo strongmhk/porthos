@@ -1,2 +1,2 @@
 # porothos
-swyp-2-team-frontend
+swyp-2-team-backend
