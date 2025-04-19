@@ -1,18 +1,17 @@
 version: 0.0
 os: linux
-
 files:
   - source: /
     destination: /home/ubuntu/porothos
+    overwrite: yes
 
 hooks:
   ApplicationStop:
     - location: appspec-script/stop.sh
-      timeout: 60
-      runas: ubuntu
-
+      timeout: 30
+      runas: root
   AfterInstall:
     - location: appspec-script/start.sh
       timeout: 60
-      runas: ubuntu
+      runas: root
 
