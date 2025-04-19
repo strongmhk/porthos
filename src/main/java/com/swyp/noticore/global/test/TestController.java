@@ -1,13 +1,21 @@
 package com.swyp.noticore.global.test;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 @RestController
+@RequestMapping("/api")
 public class TestController {
 
-    @GetMapping("/hello")
-    public String hello() {
-        return "hello";
+    @GetMapping("/test")
+    public String test(HttpServletRequest request) {
+        String clientIp = request.getRemoteAddr();
+        String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        return String.format("Backend Conn Success ~ !\nCurrent Backend IP: %s\nCurrent Time: %s", clientIp, now);
     }
 }
