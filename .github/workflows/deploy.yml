@@ -1,0 +1,46 @@
+name: Deploy to EC2 with CodeDeploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Java 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+
+    - name: Build with Gradle
+      run: ./gradlew clean build
+
+    - name: Package for deploy
+      run: |
+        zip -r deploy.zip build/libs appspec.yml appspec-script/
+
+    - name: Upload to S3
+      run: |
+        aws s3 cp deploy.zip s3://s3-porthos-deploy-jar/deploy.zip
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_REGION: ap-northeast-2
+
+    - name: Trigger CodeDeploy
+      run: |
+        aws deploy create-deployment \
+          --application-name pjh-porthos-app \
+          --deployment-group-name porthos-deploy-group \
+          --s3-location bucket=s3-porthos-deploy-jar,bundleType=zip,key=deploy.zip \
+          --region ap-northeast-2
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
