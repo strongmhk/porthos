@@ -2,7 +2,10 @@ package com.swyp.noticore.global.test;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.HttpServletRequest;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 @RestController
@@ -21,7 +24,6 @@ public class TestController {
         System.out.println("====== NOTIFY REQUEST ======");
         payload.forEach((k, v) -> System.out.println(k + ": " + v));
         System.out.println("============================");
-
         return ResponseEntity.ok("Notification received successfully");
     }
 }
