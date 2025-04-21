@@ -8,3 +8,6 @@ spring:
 logging:
   level:
     root: info
+
+slack:
+  webhook-url: https://hooks.slack.com/services/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

@@ -1,5 +1,8 @@
 package com.swyp.noticore.global.test;
 
+import com.swyp.noticore.infrastructure.slack.SlackService;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,11 +25,14 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api")
+@RequiredArgsConstructor
 public class TestController {
 
     private final S3Client s3Client = S3Client.builder()
             .region(Region.US_EAST_1)  // Ensure this matches the S3 bucket region
             .build();
+
+    private final SlackService slackService;
 
     @GetMapping("/test")
     public String test(HttpServletRequest request) {
@@ -78,6 +84,12 @@ public class TestController {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body("Failed to process .eml file: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/test/slack")
+    public ResponseEntity<String> sendSlackTextMessage() throws Exception {
+        slackService.sendErrorNotification();
+        return ResponseEntity.ok("Error Message is successfully sent to Slack.");
     }
 
     private String extractText(Part part) throws Exception {
