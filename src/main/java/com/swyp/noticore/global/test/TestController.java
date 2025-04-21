@@ -75,8 +75,10 @@ public class TestController {
         MimeMessage originalMessage = new MimeMessage(session, inputStream);
         String subject = originalMessage.getSubject();
 
+        // String groupName = subject.replaceAll(".*\\[GROUP:([^\\]]+)\\].*", "$1"); => 그룹 명 추출
+
         // 2-1. 이메일 제목 형식 검사
-        if (subject == null || !subject.matches(".*\\[GROUP:[^\\]]+\\].*")) {
+        if (subject == null || !subject.matches(".*\\[GROUP:[^\\]]+\\].*")) { // or DB에 그룹명이 존재하지않는 경우도 향 후 추가
             // 오류 안내 메일 전송
             Address[] froms = originalMessage.getFrom();
             String sender = (froms != null && froms.length > 0) ? ((InternetAddress) froms[0]).getAddress() : null;
