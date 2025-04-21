@@ -125,7 +125,7 @@ public class TestController {
         MimeMessage forwardMessage = new MimeMessage(session);
         forwardMessage.setFrom(new InternetAddress("no-reply@prod.aic.hanwhavision.cloud"));
         forwardMessage.setRecipients(Message.RecipientType.TO,
-                InternetAddress.parse("hojun121@gmail.com,qkrwoghwns@gmail.com"));
+                InternetAddress.parse("moonswok022@gmail.com,rrim33@gmail.com,yhkang2003@gmail.com,injnamek@gmail.com,kim6562166086@gmail.com,kitty14904@gmail.com,hojun121@gmail.com"));
         forwardMessage.setSubject("[FORWARD] " + subject);
 
         MimeMultipart multipart = new MimeMultipart();
