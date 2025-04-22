@@ -3,6 +3,7 @@ spring:
     import:
       - mysql.yml
       - slack.yml
+      - jwt.yml
   application:
     name: noticore
 
@@ -13,6 +14,11 @@ logging:
 
 ---
 spring.config.activate.on-profile: local
+
+spring:
+  config:
+    import:
+      - optional:classpath:env.properties
 
 logging:
   level:
