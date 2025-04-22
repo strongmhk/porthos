@@ -35,6 +35,11 @@ public class SecurityConfig {
         "/lib/**"
     };
 
+    private static final String[] PUBLIC_API_ENDPOINTS = {
+        "/api/auth/login"
+    };
+
+    @Bean
     protected SecurityFilterChain config(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
@@ -46,7 +51,7 @@ public class SecurityConfig {
             .logout(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(STATIC_RESOURCES).permitAll()
-                .requestMatchers("/api/**").permitAll()
+                .requestMatchers(PUBLIC_API_ENDPOINTS).permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
@@ -57,6 +62,8 @@ public class SecurityConfig {
                 .accessDeniedHandler(customAccessDeniedHandler)
             )
             .addFilterBefore(new JwtAuthenticationFilter(jwtUtils), UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
     }
 
     @Bean
@@ -64,7 +71,8 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:3000"
+            "http://localhost:3000",
+            "http://localhost:8080"
         ));
 
         configuration.setAllowedHeaders(Arrays.asList("*"));
