@@ -37,6 +37,11 @@ public class TestController {
             .credentialsProvider(DefaultCredentialsProvider.create())
             .build();
 
+    private final SnsClient snsClient = SnsClient.builder()
+        .region(Region.US_EAST_1)
+        .credentialsProvider(DefaultCredentialsProvider.create())
+        .build();
+
     @GetMapping("/test")
     public String test(HttpServletRequest request) {
         String clientIp = request.getRemoteAddr();
@@ -159,7 +164,45 @@ public class TestController {
 
         System.out.println("====== FORWARDED EMAIL ======");
         System.out.println("Original Subject: " + subject);
-        System.out.println("Recipients: hojun121@gmail.com, qkrwoghwns@gmail.com");
+        Address[] recipients = forwardMessage.getRecipients(Message.RecipientType.TO);
+        if (recipients != null) {
+            String recipientList = Arrays.stream(recipients)
+                    .map(Address::toString)
+                    .reduce((a, b) -> a + ", " + b)
+
+            System.out.println("Recipients: " + recipientList);
+        } else {
+            System.out.println("Recipients: None");
+        }
         System.out.println("==============================");
+
+        // 5. SMS 전송
+        List<String> smsRecipients = List.of("+821038476467", "+821093044255");
+        sendSmsAlert(subject, smsRecipients);
+
+    }
+
+    private void sendSmsAlert(String subject, List<String> phoneNumbers) {
+        Map<String, MessageAttributeValue> smsAttributes = Map.of(
+            "AWS.SNS.SMS.SMSType", MessageAttributeValue.builder()
+                .stringValue("Transactional")
+                .dataType("String")
+                .build()
+        );
+
+        for (String number : phoneNumbers) {
+            try {
+                PublishRequest request = PublishRequest.builder()
+                        .phoneNumber(number)
+                        .message("긴급 장애 발생: " + subject)
+                        .messageAttributes(smsAttributes)
+                        .build();
+
+                PublishResponse result = snsClient.publish(request);
+                System.out.printf("SMS 전송 성공 → %s | Message ID: %s%n", number, result.messageId());
+            } catch (Exception e) {
+                System.err.printf("SMS 전송 실패 → %s | 이유: %s%n", number, e.getMessage());
+            }
+        }
     }
 }
