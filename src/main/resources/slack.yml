@@ -1,23 +1,8 @@
-spring:
-  config:
-    import:
-      - mysql.yml
-      - slack.yml
-  application:
-    name: noticore
-
-logging:
-  level:
-    root: info
-
-
 ---
 spring.config.activate.on-profile: local
 
-logging:
-  level:
-    root: INFO
-
+slack:
+  webhook-url: https://hooks.slack.com/services/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
 
 ---
 spring.config.activate.on-profile: dev
