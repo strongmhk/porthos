@@ -15,6 +15,10 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.ses.SesClient;
 import software.amazon.awssdk.services.ses.model.RawMessage;
 import software.amazon.awssdk.services.ses.model.SendRawEmailRequest;
+import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.sns.model.MessageAttributeValue;
+import software.amazon.awssdk.services.sns.model.PublishRequest;
+import software.amazon.awssdk.services.sns.model.PublishResponse;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -135,40 +139,41 @@ public class TestController {
 
         MimeMultipart multipart = new MimeMultipart();
 
-        // Part 1: 안내 메시지
-        MimeBodyPart notePart = new MimeBodyPart();
-        notePart.setText("※ 이 메일은 자동 전달된 장애 보고입니다.\n\n");
+        // 3-1: 안내 메시지
+        // MimeBodyPart notePart = new MimeBodyPart();
+        // notePart.setText("※ 이 메일은 자동 전달된 장애 보고입니다.\n\n");
 
-        // Part 2: 원본 메일 통째로 첨부
-        MimeBodyPart forwardPart = new MimeBodyPart();
-        forwardPart.setContent(originalMessage, "message/rfc822");
+        // 3-2: 원본 메일 통째로 첨부
+        // MimeBodyPart forwardPart = new MimeBodyPart();
+        // forwardPart.setContent(originalMessage, "message/rfc822");
 
-        multipart.addBodyPart(notePart);
-        multipart.addBodyPart(forwardPart);
+        // multipart.addBodyPart(notePart);
+        // multipart.addBodyPart(forwardPart);
 
-        forwardMessage.setContent(multipart);
-        forwardMessage.saveChanges();
+        // forwardMessage.setContent(multipart);
+        // forwardMessage.saveChanges();
 
         // 4. SES 전송
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        forwardMessage.writeTo(baos);
-        byte[] rawMessageBytes = baos.toByteArray();
+        // ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        // forwardMessage.writeTo(baos);
+        // byte[] rawMessageBytes = baos.toByteArray();
 
-        SendRawEmailRequest sesRequest = SendRawEmailRequest.builder()
-                .rawMessage(RawMessage.builder()
-                        .data(SdkBytes.fromByteArray(rawMessageBytes))
-                        .build())
-                .build();
+        // SendRawEmailRequest sesRequest = SendRawEmailRequest.builder()
+        //         .rawMessage(RawMessage.builder()
+        //                 .data(SdkBytes.fromByteArray(rawMessageBytes))
+        //                 .build())
+        //         .build();
 
-        sesClient.sendRawEmail(sesRequest);
+        // sesClient.sendRawEmail(sesRequest);
 
         System.out.println("====== FORWARDED EMAIL ======");
         System.out.println("Original Subject: " + subject);
         Address[] recipients = forwardMessage.getRecipients(Message.RecipientType.TO);
         if (recipients != null) {
             String recipientList = Arrays.stream(recipients)
-                    .map(Address::toString)
-                    .reduce((a, b) -> a + ", " + b)
+                .map(Address::toString)
+                .reduce((a, b) -> a + ", " + b)
+                .orElse("No recipients");
 
             System.out.println("Recipients: " + recipientList);
         } else {
@@ -177,7 +182,7 @@ public class TestController {
         System.out.println("==============================");
 
         // 5. SMS 전송
-        List<String> smsRecipients = List.of("+821038476467", "+821093044255");
+        List<String> smsRecipients = List.of("+821038476467");
         sendSmsAlert(subject, smsRecipients);
 
     }
