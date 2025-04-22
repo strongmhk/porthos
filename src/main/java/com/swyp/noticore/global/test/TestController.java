@@ -3,6 +3,8 @@ package com.swyp.noticore.global.test;
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
 import jakarta.servlet.http.HttpServletRequest;
+import com.swyp.noticore.infrastructure.slack.SlackService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
@@ -26,6 +28,7 @@ import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api")
+@RequiredArgsConstructor
 public class TestController {
 
     private final S3Client s3Client = S3Client.builder()
@@ -36,6 +39,8 @@ public class TestController {
             .region(Region.US_EAST_1)
             .credentialsProvider(DefaultCredentialsProvider.create())
             .build();
+
+    private final SlackService slackService;
 
     @GetMapping("/test")
     public String test(HttpServletRequest request) {
@@ -162,4 +167,11 @@ public class TestController {
         System.out.println("Recipients: hojun121@gmail.com, qkrwoghwns@gmail.com");
         System.out.println("==============================");
     }
+
+    @GetMapping("/test/slack")
+    public ResponseEntity<String> sendSlackTextMessage() throws Exception {
+        slackService.sendErrorNotification();
+        return ResponseEntity.ok("Error Message is successfully sent to Slack.");
+    }
 }
+

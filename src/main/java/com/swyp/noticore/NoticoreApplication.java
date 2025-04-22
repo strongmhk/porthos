@@ -9,5 +9,4 @@ public class NoticoreApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(NoticoreApplication.class, args);
 	}
-
 }
