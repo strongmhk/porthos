@@ -4,6 +4,7 @@ spring:
       - mysql.yml
       - slack.yml
       - jwt.yml
+      - redis.yml
   application:
     name: noticore
 
