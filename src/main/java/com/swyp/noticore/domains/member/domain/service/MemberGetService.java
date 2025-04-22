@@ -1,5 +1,6 @@
 package com.swyp.noticore.domains.member.domain.service;
 
+import com.swyp.noticore.domains.auth.exception.AuthErrorCode;
 import com.swyp.noticore.domains.member.exception.MemberErrorCode;
 import com.swyp.noticore.domains.member.persistence.entity.MemberEntity;
 import com.swyp.noticore.domains.member.persistence.repository.MemberRepository;
@@ -18,5 +19,10 @@ public class MemberGetService {
     public MemberEntity loadMemberByEmail(String email) {
         return memberRepository.findByEmail(email)
             .orElseThrow(() -> ApplicationException.from(MemberErrorCode.MEMBER_NOT_FOUND));
+    }
+
+    public MemberEntity getMemberByEmail(String email) {
+        return memberRepository.findByEmail(email)
+            .orElseThrow(() -> ApplicationException.from(AuthErrorCode.INVALID_CREDENTIALS));
     }
 }
