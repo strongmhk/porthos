@@ -30,6 +30,6 @@ public class MemberGroupEntity extends BaseTimeEntity {
     private MemberEntity member;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "group_id")
-    private GroupEntity groupEntity;
+    @JoinColumn(name = "group_info_id")
+    private GroupInfoEntity groupInfo;
 }

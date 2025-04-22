@@ -16,8 +16,8 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "group")
-public class GroupEntity extends BaseTimeEntity {
+@Table(name = "group_info")
+public class GroupInfoEntity extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
