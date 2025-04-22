@@ -33,16 +33,19 @@ public class MemberEntity extends BaseTimeEntity {
     @JoinColumn(name = "member_metadata_id", nullable = false)
     private MemberMetadataEntity memberMetadata;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     private Role role;
 
     @Column(nullable = false, unique = true, length = 50)
     private String email;
 
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false, length = 20)
+    private String name;
+
+    @Column(nullable = false, length = 20)
     private String phone;
 }
