@@ -1,8 +1,11 @@
 package com.swyp.noticore.domains.member.persistence.entity;
 
+import com.swyp.noticore.domains.member.domain.constant.Role;
 import com.swyp.noticore.global.entity.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -29,6 +32,10 @@ public class MemberEntity extends BaseTimeEntity {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_metadata_id", nullable = false)
     private MemberMetadataEntity memberMetadata;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Role role;
 
     @Column(nullable = false, unique = true, length = 50)
     private String email;
