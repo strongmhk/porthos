@@ -1,0 +1,16 @@
+jwt:
+  secret-key: xhZ03FOyeiXRNTs3tXoUXzWazy/fxMqhIp7ehrCyTWoyeONltC/ZIa9oFtMido7orXZpM5kYCgFH4sJ9Kwli3Q==
+  refresh-expiration: 1209600
+  access-expiration: 1800000
+
+---
+spring.config.activate.on-profile: local
+
+---
+spring.config.activate.on-profile: dev
+
+---
+spring.config.activate.on-profile: qa
+
+---
+spring.config.activate.on-profile: prod

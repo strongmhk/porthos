@@ -72,7 +72,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         log.error("HttpMessageNotReadableException: {}", ex.getMessage());
         ApplicationResponse<Void> response = ApplicationResponse.onFailure(
             CommonErrorCode.METHOD_ARGUMENT_NOT_VALID.getCustomCode(),
-            CommonErrorCode.METHOD_ARGUMENT_NOT_VALID.getMessage()
+            null
+//            CommonErrorCode.METHOD_ARGUMENT_NOT_VALID.getMessage() // TODO: 에러 메시지 정책 바뀌면 적용
         );
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
@@ -112,7 +113,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         return super.handleExceptionInternal(
             e,
-            body,
+            null, // TODO: 에러 메시지 정책 바뀌면 적용
             headers,
             baseErrorCode.getHttpStatus(),
             webRequest
@@ -133,7 +134,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         return super.handleExceptionInternal(
             e,
-            body,
+            null, // TODO: 에러 메시지 정책 바뀌면 적용
             HttpHeaders.EMPTY,
             status,
             request
@@ -153,7 +154,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         return super.handleExceptionInternal(
             e,
-            body,
+            null, // TODO: 에러 메시지 정책 바뀌면 적용
             HttpHeaders.EMPTY,
             CommonErrorCode.BAD_REQUEST.getHttpStatus(),
             request
@@ -173,7 +174,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         return super.handleExceptionInternal(
             e,
-            body,
+            null, // TODO: 에러 메시지 정책 바뀌면 적용
             HttpHeaders.EMPTY,
             baseErrorCode.getHttpStatus(),
             request

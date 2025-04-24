@@ -1,7 +1,10 @@
 spring:
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+  config:
+    import:
+      - mysql.yml
+      - slack.yml
+      - jwt.yml
+      - redis.yml
   application:
     name: noticore
 
@@ -9,5 +12,25 @@ logging:
   level:
     root: info
 
-slack:
-  webhook-url: https://hooks.slack.com/services/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
+
+---
+spring.config.activate.on-profile: local
+
+spring:
+  config:
+    import:
+      - optional:classpath:env.properties
+
+logging:
+  level:
+    root: INFO
+
+
+---
+spring.config.activate.on-profile: dev
+
+---
+spring.config.activate.on-profile: qa
+
+---
+spring.config.activate.on-profile: prod
