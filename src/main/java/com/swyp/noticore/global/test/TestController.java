@@ -45,7 +45,7 @@ public class TestController {
             .build();
 
     private final SnsClient snsClient = SnsClient.builder()
-        .region(Region.AP_NORTHEAST_1)
+        .region(Region.US_EAST_1)
         .credentialsProvider(DefaultCredentialsProvider.create())
         .build();
     
