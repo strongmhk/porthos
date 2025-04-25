@@ -1,6 +1,6 @@
 package com.swyp.noticore.domains.auth.application.usecase;
 
-import com.swyp.noticore.domains.auth.application.dto.GenerateTokenRequest;
+import com.swyp.noticore.domains.auth.application.dto.request.GenerateTokenRequest;
 import com.swyp.noticore.domains.auth.application.dto.request.LoginRequest;
 import com.swyp.noticore.domains.auth.application.dto.response.TokenResponse;
 import com.swyp.noticore.domains.auth.domain.service.MemberAuthService;

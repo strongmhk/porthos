@@ -1,4 +1,4 @@
-package com.swyp.noticore.domains.auth.application.dto;
+package com.swyp.noticore.domains.auth.application.dto.request;
 
 import com.swyp.noticore.domains.member.domain.constant.Role;
 import lombok.Builder;

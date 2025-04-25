@@ -5,7 +5,7 @@ import static com.swyp.noticore.domains.auth.utils.PasswordEncoderUtil.verifyPas
 import static com.swyp.noticore.domains.member.exception.MemberErrorCode.MEMBER_NOT_FOUND;
 import static com.swyp.noticore.global.response.code.CommonErrorCode.BAD_REQUEST;
 
-import com.swyp.noticore.domains.auth.application.dto.GenerateTokenRequest;
+import com.swyp.noticore.domains.auth.application.dto.request.GenerateTokenRequest;
 import com.swyp.noticore.domains.auth.application.mapper.AuthMapper;
 import com.swyp.noticore.domains.member.persistence.entity.MemberEntity;
 import com.swyp.noticore.domains.member.persistence.repository.MemberRepository;
