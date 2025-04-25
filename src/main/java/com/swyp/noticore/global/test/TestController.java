@@ -9,6 +9,9 @@ import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.lambda.LambdaClient;
+import software.amazon.awssdk.services.lambda.model.InvokeRequest;
+import software.amazon.awssdk.services.lambda.model.InvokeResponse;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
@@ -45,13 +48,11 @@ public class TestController {
         .region(Region.AP_NORTHEAST_1)
         .credentialsProvider(DefaultCredentialsProvider.create())
         .build();
-
-    @GetMapping("/test")
-    public String test(HttpServletRequest request) {
-        String clientIp = request.getRemoteAddr();
-        String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        return String.format("Backend Conn Success ~ !\nCurrent Backend IP: %s\nCurrent Time: %s", clientIp, now);
-    }
+    
+    private final LambdaClient lambdaClient = LambdaClient.builder()
+            .region(Region.US_EAST_1)
+            .credentialsProvider(DefaultCredentialsProvider.create())
+            .build();
 
     @PostMapping("/notify")
     public ResponseEntity<String> notify(@RequestBody Map<String, String> payload) {
@@ -181,9 +182,12 @@ public class TestController {
         }
         System.out.println("==============================");
 
-        // 5. SMS 전송
-        List<String> smsRecipients = List.of("+8201038476467");
+        // 5. Group 구성원 전파 방법 확인 및 연락처 Append
+        List<String> smsRecipients = List.of("+821038476467");
+        // 5-1. SMS 발송
         sendSmsAlert(subject, smsRecipients);
+        // 5-2. Oncall 발송
+        triggerOnCall(subject, smsRecipients);
     }
 
     private void sendSmsAlert(String subject, List<String> phoneNumbers) {
@@ -206,6 +210,25 @@ public class TestController {
                 System.out.printf("SMS 전송 성공 → %s | Message ID: %s%n", phoneNumber, result.messageId());
             } catch (Exception e) {
                 System.err.printf("SMS 전송 실패 → %s | 이유: %s%n", phoneNumber, e.getMessage());
+            }
+        }
+    }
+
+    private void triggerOnCall(String subject, List<String> phoneNumbers) {
+        for (String phoneNumber : phoneNumbers) {
+            try {
+                String payload = String.format("{\"phoneNumbers\": [\"%s\"]}", phoneNumber);
+
+                InvokeRequest request = InvokeRequest.builder()
+                        .functionName("pjh-TriggerEmergencyCall-ua1")
+                        .payload(SdkBytes.fromUtf8String(payload))
+                        .build();
+
+                InvokeResponse response = lambdaClient.invoke(request);
+                String responseStr = response.payload().asUtf8String();
+                System.out.printf("Lambda OnCall 호출 성공 → %s | Response: %s%n", phoneNumber, responseStr);
+            } catch (Exception e) {
+                System.err.printf("Lambda OnCall 호출 실패 → %s | 이유: %s%n", phoneNumber, e.getMessage());
             }
         }
     }
