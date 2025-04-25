@@ -182,7 +182,7 @@ public class TestController {
         System.out.println("==============================");
 
         // 5. SMS 전송
-        List<String> smsRecipients = List.of("+821038476467");
+        List<String> smsRecipients = List.of("+8201038476467");
         sendSmsAlert(subject, smsRecipients);
     }
 
