@@ -183,7 +183,8 @@ public class TestController {
         System.out.println("==============================");
 
         // 5. Group 구성원 전파 방법 확인 및 연락처 Append
-        List<String> smsRecipients = List.of("+821038476467");
+        // List<String> smsRecipients = List.of("+821038476467");
+        List<String> smsRecipients = List.of("+12179791611");
         // 5-1. SMS 발송
         sendSmsAlert(subject, smsRecipients);
         // 5-2. Oncall 발송
