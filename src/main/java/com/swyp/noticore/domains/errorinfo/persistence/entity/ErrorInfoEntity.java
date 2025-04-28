@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.AccessLevel;
@@ -28,6 +29,9 @@ public class ErrorInfoEntity extends BaseTimeEntity {
     private Long id;
 
     @Column(nullable = false, length = 50)
+    private String groupName;
+
+    @Column(nullable = false, length = 50)
     private String title;
 
     @Column(nullable = false, columnDefinition = "TEXT")
@@ -36,4 +40,7 @@ public class ErrorInfoEntity extends BaseTimeEntity {
     @Type(JsonType.class)
     @Column(name = "recipients", columnDefinition = "longtext")
     private Map<String, Boolean> recipients = new HashMap<>();
+
+    @Column
+    private LocalDateTime completedAt;
 }
