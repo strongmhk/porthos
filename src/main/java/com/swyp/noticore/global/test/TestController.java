@@ -35,6 +35,13 @@ import java.util.concurrent.CompletableFuture;
 @RequestMapping("/api")
 public class TestController {
 
+    @GetMapping("/test")
+     public String test(HttpServletRequest request) {
+         String clientIp = request.getRemoteAddr();
+         String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+         return String.format("Backend Conn Success ~ !\nCurrent Backend IP: %s\nCurrent Time: %s", clientIp, now);
+     }
+    
     private final S3Client s3Client = S3Client.builder()
             .region(Region.US_EAST_1)
             .build();
@@ -183,6 +190,7 @@ public class TestController {
         System.out.println("==============================");
 
         // 5. Group 구성원 전파 방법 확인 및 연락처 Append
+        // List<String> smsRecipients = List.of("+821038476467");
         List<String> smsRecipients = List.of("+821038476467");
         // 5-1. SMS 발송
         sendSmsAlert(subject, smsRecipients);
