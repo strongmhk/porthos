@@ -102,7 +102,7 @@ public class TestController {
 
             if (sender != null && sender.contains("@")) {
                 MimeMessage errorReply = new MimeMessage(session);
-                errorReply.setFrom(new InternetAddress("no-reply@prod.aic.hanwhavision.cloud"));
+                errorReply.setFrom(new InternetAddress("no-reply@noticore.co.kr"));
                 errorReply.setRecipients(Message.RecipientType.TO, InternetAddress.parse(sender));
                 errorReply.setSubject("[ERROR] 그룹 메일 전송 실패 안내");
 
@@ -140,7 +140,7 @@ public class TestController {
 
         // 3. Forward 메시지 생성
         MimeMessage forwardMessage = new MimeMessage(session);
-        forwardMessage.setFrom(new InternetAddress("no-reply@prod.aic.hanwhavision.cloud"));
+        forwardMessage.setFrom(new InternetAddress("no-reply@noticore.co.kr"));
         forwardMessage.setRecipients(Message.RecipientType.TO,
                 InternetAddress.parse("hojun121@gmail.com"));
         forwardMessage.setSubject("[FORWARD] " + subject);
