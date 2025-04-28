@@ -9,12 +9,19 @@ import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.lambda.LambdaClient;
+import software.amazon.awssdk.services.lambda.model.InvokeRequest;
+import software.amazon.awssdk.services.lambda.model.InvokeResponse;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.ses.SesClient;
 import software.amazon.awssdk.services.ses.model.RawMessage;
 import software.amazon.awssdk.services.ses.model.SendRawEmailRequest;
+import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.sns.model.MessageAttributeValue;
+import software.amazon.awssdk.services.sns.model.PublishRequest;
+import software.amazon.awssdk.services.sns.model.PublishResponse;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -37,12 +44,15 @@ public class TestController {
             .credentialsProvider(DefaultCredentialsProvider.create())
             .build();
 
-    @GetMapping("/test")
-    public String test(HttpServletRequest request) {
-        String clientIp = request.getRemoteAddr();
-        String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        return String.format("Backend Conn Success ~ !\nCurrent Backend IP: %s\nCurrent Time: %s", clientIp, now);
-    }
+    private final SnsClient snsClient = SnsClient.builder()
+        .region(Region.US_EAST_1)
+        .credentialsProvider(DefaultCredentialsProvider.create())
+        .build();
+    
+    private final LambdaClient lambdaClient = LambdaClient.builder()
+            .region(Region.US_EAST_1)
+            .credentialsProvider(DefaultCredentialsProvider.create())
+            .build();
 
     @PostMapping("/notify")
     public ResponseEntity<String> notify(@RequestBody Map<String, String> payload) {
@@ -125,16 +135,16 @@ public class TestController {
         MimeMessage forwardMessage = new MimeMessage(session);
         forwardMessage.setFrom(new InternetAddress("no-reply@prod.aic.hanwhavision.cloud"));
         forwardMessage.setRecipients(Message.RecipientType.TO,
-                InternetAddress.parse("moonswok022@gmail.com,rrim33@gmail.com,yhkang2003@gmail.com,injnamek@gmail.com,kim6562166086@gmail.com,kitty14904@gmail.com,hojun121@gmail.com"));
+                InternetAddress.parse("hojun121@gmail.com"));
         forwardMessage.setSubject("[FORWARD] " + subject);
 
         MimeMultipart multipart = new MimeMultipart();
 
-        // Part 1: 안내 메시지
+        // 3-1: 안내 메시지
         MimeBodyPart notePart = new MimeBodyPart();
         notePart.setText("※ 이 메일은 자동 전달된 장애 보고입니다.\n\n");
 
-        // Part 2: 원본 메일 통째로 첨부
+        // 3-2: 원본 메일 통째로 첨부
         MimeBodyPart forwardPart = new MimeBodyPart();
         forwardPart.setContent(originalMessage, "message/rfc822");
 
@@ -159,7 +169,67 @@ public class TestController {
 
         System.out.println("====== FORWARDED EMAIL ======");
         System.out.println("Original Subject: " + subject);
-        System.out.println("Recipients: hojun121@gmail.com, qkrwoghwns@gmail.com");
+        Address[] recipients = forwardMessage.getRecipients(Message.RecipientType.TO);
+        if (recipients != null) {
+            String recipientList = Arrays.stream(recipients)
+                .map(Address::toString)
+                .reduce((a, b) -> a + ", " + b)
+                .orElse("No recipients");
+
+            System.out.println("Recipients: " + recipientList);
+        } else {
+            System.out.println("Recipients: None");
+        }
         System.out.println("==============================");
+
+        // 5. Group 구성원 전파 방법 확인 및 연락처 Append
+        List<String> smsRecipients = List.of("+821038476467");
+        // 5-1. SMS 발송
+        sendSmsAlert(subject, smsRecipients);
+        // 5-2. Oncall 발송
+        triggerOnCall(subject, smsRecipients);
+    }
+
+    private void sendSmsAlert(String subject, List<String> phoneNumbers) {
+        Map<String, MessageAttributeValue> smsAttributes = Map.of(
+                "AWS.SNS.SMS.SMSType", MessageAttributeValue.builder()
+                        .stringValue("Transactional")
+                        .dataType("String")
+                        .build()
+        );
+
+        for (String phoneNumber : phoneNumbers) {
+            try {
+                PublishRequest request = PublishRequest.builder()
+                        .phoneNumber(phoneNumber)
+                        .message(subject)
+                        .messageAttributes(smsAttributes)
+                        .build();
+
+                PublishResponse result = snsClient.publish(request);
+                System.out.printf("SMS 전송 성공 → %s | Message ID: %s%n", phoneNumber, result.messageId());
+            } catch (Exception e) {
+                System.err.printf("SMS 전송 실패 → %s | 이유: %s%n", phoneNumber, e.getMessage());
+            }
+        }
+    }
+
+    private void triggerOnCall(String subject, List<String> phoneNumbers) {
+        for (String phoneNumber : phoneNumbers) {
+            try {
+                String payload = String.format("{\"phoneNumbers\": [\"%s\"]}", phoneNumber);
+
+                InvokeRequest request = InvokeRequest.builder()
+                        .functionName("pjh-TriggerEmergencyCall-ua1")
+                        .payload(SdkBytes.fromUtf8String(payload))
+                        .build();
+
+                InvokeResponse response = lambdaClient.invoke(request);
+                String responseStr = response.payload().asUtf8String();
+                System.out.printf("Lambda OnCall 호출 성공 → %s | Response: %s%n", phoneNumber, responseStr);
+            } catch (Exception e) {
+                System.err.printf("Lambda OnCall 호출 실패 → %s | 이유: %s%n", phoneNumber, e.getMessage());
+            }
+        }
     }
 }
