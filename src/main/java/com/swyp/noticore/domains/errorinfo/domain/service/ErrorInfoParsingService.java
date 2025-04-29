@@ -51,7 +51,7 @@ public class ErrorInfoParsingService {
             String groupName = subject.replaceAll(".*\\[GROUP:([^\\]]+)\\].*", "$1");
 
             // 제목 유효성 검사
-            boolean isExistGroup = groupInfoRepository.exitsByName(groupName);
+            boolean isExistGroup = groupInfoRepository.existsByName(groupName);
 
             if (subject.isBlank() || !subject.matches(".*\\[GROUP:[^\\]]+\\].*") || !isExistGroup) {
                 sendErrorEmail(session, originalMessage);
