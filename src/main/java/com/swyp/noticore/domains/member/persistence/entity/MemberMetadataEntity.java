@@ -35,10 +35,6 @@ public class MemberMetadataEntity extends BaseTimeEntity {
 
     @Column(nullable = false)
     @ColumnDefault("1")
-    private Boolean emailNoti;
-
-    @Column(nullable = false)
-    @ColumnDefault("1")
     private Boolean smsNoti;
 
     @Column(nullable = false)
