@@ -13,7 +13,7 @@ public class CookieUtils {
     public static Cookie createCookie(String key, String value, int maxAgeSec, boolean isHttpOnly) {
         Cookie cookie = new Cookie(key, value);
         cookie.setMaxAge(maxAgeSec);
-        cookie.setSecure(true);
+//        cookie.setSecure(true);
         cookie.setPath("/");
         cookie.setHttpOnly(isHttpOnly);
 
@@ -25,8 +25,6 @@ public class CookieUtils {
         cookie.setPath("/");
         cookie.setHttpOnly(true);
         cookie.setMaxAge(0);
-        // HTTPS 환경에서 secure 설정 고려: cookie.setSecure(true);
-        // SameSite 설정 고려: response.addHeader("Set-Cookie", String.format("%s=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict", key));
         response.addCookie(cookie);
     }
 
