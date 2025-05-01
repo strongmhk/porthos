@@ -25,11 +25,16 @@ public class RequestMatcherHolder {
         new RequestInfo(POST, "/api/auth/logout", null),
         new RequestInfo(POST, "/api/auth/refresh", USER),
 
-        new RequestInfo(GET, "/webjars/**",null),
 
         // swagger
-        new RequestInfo(GET, "/api-docs/**", null),
-
+        new RequestInfo(GET, "/api/test-token",null),
+        new RequestInfo(GET, "/swagger-ui/**",null),
+        new RequestInfo(GET, "/swagger-ui/index.html",null),
+        new RequestInfo(GET, "/v3/api-docs/**",null),
+        new RequestInfo(GET, "/swagger-resources/**",null),
+        new RequestInfo(GET, "/webjars/**",null),
+        new RequestInfo(GET, "/favicon.ico",null),
+        
         // user
         new RequestInfo(GET, "/api/members/**", USER),
 
