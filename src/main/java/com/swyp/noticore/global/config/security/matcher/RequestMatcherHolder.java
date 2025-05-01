@@ -22,15 +22,13 @@ public class RequestMatcherHolder {
 
         // auth
         new RequestInfo(POST, "/api/auth/login", null),
+        new RequestInfo(POST, "/api/auth/logout", null),
         new RequestInfo(POST, "/api/auth/refresh", USER),
 
         new RequestInfo(GET, "/webjars/**",null),
 
         // swagger
         new RequestInfo(GET, "/api-docs/**", null),
-
-        // test
-        new RequestInfo(GET, "/tests/members/**", null),
 
         // user
         new RequestInfo(GET, "/api/members/**", USER),

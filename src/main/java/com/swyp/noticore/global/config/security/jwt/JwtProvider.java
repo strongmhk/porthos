@@ -53,7 +53,7 @@ public class JwtProvider {
     }
 
     public String generateRefreshToken(Long memberId, Role role) {
-        redisService.deleteValues(REFRESH.toString() + memberId);
+        expireRefreshToken(memberId);
 
         SecretKey key = getSecretKey();
         Instant refreshDate = getExpiration(refreshExpiration);
@@ -69,6 +69,10 @@ public class JwtProvider {
         redisService.setValues(REFRESH.toString() + memberId, refreshToken, Duration.ofSeconds(refreshExpiration));
 
         return refreshToken;
+    }
+
+    public void expireRefreshToken(Long memberId) {
+        redisService.deleteValues(REFRESH.toString() + memberId);
     }
 
     private SecretKey getSecretKey() {

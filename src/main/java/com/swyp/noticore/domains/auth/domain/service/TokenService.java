@@ -5,6 +5,7 @@ import com.swyp.noticore.domains.auth.application.dto.response.TokenResponse;
 import com.swyp.noticore.domains.auth.application.mapper.AuthMapper;
 import com.swyp.noticore.global.config.security.jwt.JwtProvider;
 import com.swyp.noticore.global.config.security.jwt.JwtUtils;
+import com.swyp.noticore.global.config.security.jwt.constant.TokenType;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,5 +31,10 @@ public class TokenService {
     public TokenResponse reissueToken(GenerateTokenRequest tokenRequest, HttpServletResponse response, String refreshToken) {
         jwtUtils.validateRefreshToken(tokenRequest.memberId(), refreshToken);
         return generateToken(tokenRequest, response);
+    }
+
+    public void expireRefreshToken(HttpServletResponse response, String refreshToken) {
+        Long memberId = jwtUtils.getMemberIdFromToken(response, refreshToken, TokenType.REFRESH);
+        jwtProvider.expireRefreshToken(memberId);
     }
 }
