@@ -121,4 +121,17 @@ public class JwtUtils {
             log.error(e.getMessage());
         }
     }
+
+    public String generateToken(String subject, String role, TokenType tokenType, long expirationMillis) {
+        SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
+
+        return Jwts.builder()
+            .setSubject(subject)
+            .claim("role", role)
+            .claim("type", tokenType.name())
+            .setIssuedAt(new java.util.Date())
+            .setExpiration(new java.util.Date(System.currentTimeMillis() + expirationMillis))
+            .signWith(key)
+            .compact();
+    }
 }

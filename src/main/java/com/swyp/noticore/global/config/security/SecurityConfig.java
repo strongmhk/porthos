@@ -39,6 +39,18 @@ public class SecurityConfig {
         "/api/auth/login"
     };
 
+    // TBD: Allowed to Only Dev
+    private static final String[] SWAGGER_WHITELIST = {
+        "/api/test-token",
+        "/swagger-ui/**",
+        "/swagger-ui.html",
+        "/swagger-ui/index.html",
+        "/v3/api-docs/**",
+        "/swagger-resources/**",
+        "/webjars/**",
+        "/favicon.ico"
+    };
+
     @Bean
     protected SecurityFilterChain config(HttpSecurity http) throws Exception {
         http
@@ -52,6 +64,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(STATIC_RESOURCES).permitAll()
                 .requestMatchers(PUBLIC_API_ENDPOINTS).permitAll()
+                .requestMatchers(SWAGGER_WHITELIST).permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
