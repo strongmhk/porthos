@@ -3,9 +3,8 @@ package com.swyp.noticore.domains.auth.application.usecase;
 import static com.swyp.noticore.domains.auth.domain.constants.AuthConstants.ACCESS_COOKIE_KEY;
 import static com.swyp.noticore.domains.auth.domain.constants.AuthConstants.REFRESH_COOKIE_KEY;
 import static com.swyp.noticore.global.response.code.CommonErrorCode.BAD_REQUEST;
-
-import com.swyp.noticore.domains.auth.application.dto.GenerateTokenRequest;
 import com.swyp.noticore.domains.auth.application.dto.MemberContext;
+import com.swyp.noticore.domains.auth.application.dto.request.GenerateTokenRequest;
 import com.swyp.noticore.domains.auth.application.dto.request.LoginRequest;
 import com.swyp.noticore.domains.auth.application.dto.response.TokenResponse;
 import com.swyp.noticore.domains.auth.application.mapper.AuthMapper;
