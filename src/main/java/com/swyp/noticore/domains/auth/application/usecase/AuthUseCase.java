@@ -17,8 +17,10 @@ import com.swyp.noticore.infrastructure.redis.RedisService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @UseCase
 @RequiredArgsConstructor
 @Transactional
@@ -53,6 +55,7 @@ public class AuthUseCase {
         if (refreshToken != null && !refreshToken.isBlank()) {
             tokenService.expireRefreshToken(response, refreshToken);
         } else {
+            log.error("유효하지 않은 리프레시 토큰 : {}", refreshToken);
             throw ApplicationException.from(BAD_REQUEST);
         }
 
