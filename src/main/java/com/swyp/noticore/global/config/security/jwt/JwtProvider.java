@@ -39,27 +39,29 @@ public class JwtProvider {
     private static final String ROLE = "role";
     private static final String TYPE = "type";
 
-    public String generateAccessToken(String email, Role role) {
+    public String generateAccessToken(Long memberId, Role role) {
         SecretKey key = getSecretKey();
         Instant accessDate = getExpiration(accessExpiration);
 
         return Jwts.builder()
             .claim(ROLE, role)
             .claim(TYPE, ACCESS)
-            .setSubject(email)
+            .setSubject(String.valueOf(memberId))
             .setExpiration(Date.from(accessDate))
             .signWith(key, SignatureAlgorithm.HS256)
             .compact();
     }
 
-    public String generateRefreshToken(String email, Role role, Long memberId) {
+    public String generateRefreshToken(Long memberId, Role role) {
+        redisService.deleteValues(REFRESH.toString() + memberId);
+
         SecretKey key = getSecretKey();
         Instant refreshDate = getExpiration(refreshExpiration);
 
         String refreshToken = Jwts.builder()
             .claim(ROLE, role)
             .claim(TYPE, REFRESH)
-            .setSubject(email)
+            .setSubject(String.valueOf(memberId))
             .setExpiration(Date.from(refreshDate))
             .signWith(key, SignatureAlgorithm.HS256)
             .compact();

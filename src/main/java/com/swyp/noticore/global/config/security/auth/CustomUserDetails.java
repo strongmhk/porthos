@@ -4,7 +4,7 @@ import static com.swyp.noticore.domains.member.domain.constant.Role.ADMIN;
 import static com.swyp.noticore.domains.member.domain.constant.Role.SUPER_ADMIN;
 import static com.swyp.noticore.domains.member.domain.constant.Role.USER;
 
-import com.swyp.noticore.domains.member.persistence.entity.MemberEntity;
+import com.swyp.noticore.domains.auth.application.dto.MemberContext;
 import java.util.Collection;
 import java.util.Collections;
 import lombok.Getter;
@@ -17,14 +17,14 @@ import org.springframework.security.core.userdetails.UserDetails;
 @RequiredArgsConstructor
 public class CustomUserDetails implements UserDetails {
 
-    private final transient MemberEntity member;
+    private final transient MemberContext memberContext;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        if (SUPER_ADMIN.equals(member.getRole())) {
+        if (SUPER_ADMIN.equals(memberContext.role())) {
             return Collections.singletonList(new SimpleGrantedAuthority(SUPER_ADMIN.name()));
         }
-        if (ADMIN.equals(member.getRole())) {
+        if (ADMIN.equals(memberContext.role())) {
             return Collections.singletonList(new SimpleGrantedAuthority(ADMIN.name()));
         }
         return Collections.singletonList(new SimpleGrantedAuthority(USER.name()));
@@ -37,7 +37,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public String getUsername() {
-        return member.getEmail();
+        return memberContext.email();
     }
 
     @Override

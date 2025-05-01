@@ -4,9 +4,10 @@ import com.swyp.noticore.domains.member.domain.constant.Role;
 import lombok.Builder;
 
 @Builder
-public record GenerateTokenRequest(
+public record MemberContext(
+    Role role,
     Long memberId,
-    Role role
+    String email
 ) {
 
 }

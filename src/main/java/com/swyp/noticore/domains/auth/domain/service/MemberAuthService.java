@@ -30,7 +30,6 @@ public class MemberAuthService {
         validatePassword(reqPassword, memberEntity.getPassword());
 
         return AuthMapper.mapToGenerateTokenRequest(
-            memberEntity.getEmail(),
             memberEntity.getRole(),
             memberEntity.getId()
         );
