@@ -20,11 +20,21 @@ public class RequestMatcherHolder {
 
     private static final List<RequestInfo> REQUEST_INFO_LIST = List.of(
 
+        // static resources
+        new RequestInfo(GET, "/*.ico", null),
+        new RequestInfo(GET, "/resources/**", null),
+        new RequestInfo(GET, "/css/**", null),
+        new RequestInfo(GET, "/js/**", null),
+        new RequestInfo(GET, "/img/**", null),
+
+        // error-info
+        new RequestInfo(GET, "/api/test/**",null),
+        new RequestInfo(POST, "/api/test/**",null),
+
         // auth
         new RequestInfo(POST, "/api/auth/login", null),
         new RequestInfo(POST, "/api/auth/logout", null),
-        new RequestInfo(POST, "/api/auth/refresh", USER),
-
+        new RequestInfo(POST, "/api/auth/refresh", null),
 
         // swagger
         new RequestInfo(GET, "/api/test-token",null),
@@ -34,18 +44,14 @@ public class RequestMatcherHolder {
         new RequestInfo(GET, "/swagger-resources/**",null),
         new RequestInfo(GET, "/webjars/**",null),
         new RequestInfo(GET, "/favicon.ico",null),
-        
+
+        // error-info
+        new RequestInfo(GET, "/api/error-info/**",null),
+        new RequestInfo(POST, "/api/error-info/**",null),
+
+        // 빌드 에러 방지를 위해 각 권한에 대한 RequestInfo가 최소 1개씩은 리스트에 있어야함
         // user
         new RequestInfo(GET, "/api/members/**", USER),
-
-        // static resources
-        new RequestInfo(GET, "/*.ico", null),
-        new RequestInfo(GET, "/resources/**", null),
-        new RequestInfo(GET, "/css/**", null),
-        new RequestInfo(GET, "/js/**", null),
-        new RequestInfo(GET, "/img/**", null),
-
-        // 각 Permission의 권한이 필요한 RequestInfo가 최소 1개씩은 리스트에 있어야함
         new RequestInfo(GET, "/api/admin/**", ADMIN),
         new RequestInfo(GET, "/api/super/**", SUPER_ADMIN)
     );
