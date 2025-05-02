@@ -1,9 +1,14 @@
 package com.swyp.noticore.global.config.security;
 
+import static com.swyp.noticore.domains.member.domain.constant.Role.ADMIN;
+import static com.swyp.noticore.domains.member.domain.constant.Role.SUPER_ADMIN;
+import static com.swyp.noticore.domains.member.domain.constant.Role.USER;
+
 import com.swyp.noticore.global.config.security.filter.JwtAuthenticationFilter;
 import com.swyp.noticore.global.config.security.handler.CustomAccessDeniedHandler;
 import com.swyp.noticore.global.config.security.handler.CustomAuthenticationEntryPoint;
 import com.swyp.noticore.global.config.security.jwt.JwtUtils;
+import com.swyp.noticore.global.config.security.matcher.RequestMatcherHolder;
 import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -23,33 +28,10 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private final RequestMatcherHolder requestMatcherHolder;
     private final JwtUtils jwtUtils;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
-
-    private static final String[] STATIC_RESOURCES = {
-        "/resource/**",
-        "/css/**",
-        "/js/**",
-        "/img/**",
-        "/lib/**"
-    };
-
-    private static final String[] PUBLIC_API_ENDPOINTS = {
-        "/api/auth/login"
-    };
-
-    // TBD: Allowed to Only Dev
-    private static final String[] SWAGGER_WHITELIST = {
-        "/api/test-token",
-        "/swagger-ui/**",
-        "/swagger-ui.html",
-        "/swagger-ui/index.html",
-        "/v3/api-docs/**",
-        "/swagger-resources/**",
-        "/webjars/**",
-        "/favicon.ico"
-    };
 
     @Bean
     protected SecurityFilterChain config(HttpSecurity http) throws Exception {
@@ -62,9 +44,13 @@ public class SecurityConfig {
             .formLogin(AbstractHttpConfigurer::disable)
             .logout(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers(STATIC_RESOURCES).permitAll()
-                .requestMatchers(PUBLIC_API_ENDPOINTS).permitAll()
-                .requestMatchers(SWAGGER_WHITELIST).permitAll()
+                .requestMatchers(requestMatcherHolder.getRequestMatchersByMinPermission(null)).permitAll()
+                .requestMatchers(requestMatcherHolder.getRequestMatchersByMinPermission(USER))
+                .hasAnyAuthority(USER.name(), ADMIN.name(), SUPER_ADMIN.name())
+                .requestMatchers(requestMatcherHolder.getRequestMatchersByMinPermission(ADMIN))
+                .hasAnyAuthority(ADMIN.name(), SUPER_ADMIN.name())
+                .requestMatchers(requestMatcherHolder.getRequestMatchersByMinPermission(SUPER_ADMIN))
+                .hasAnyAuthority(SUPER_ADMIN.name())
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
@@ -74,7 +60,7 @@ public class SecurityConfig {
                 .authenticationEntryPoint(customAuthenticationEntryPoint)
                 .accessDeniedHandler(customAccessDeniedHandler)
             )
-            .addFilterBefore(new JwtAuthenticationFilter(jwtUtils), UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(new JwtAuthenticationFilter(jwtUtils, requestMatcherHolder), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

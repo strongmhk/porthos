@@ -21,8 +21,8 @@ public class MemberGetService {
             .orElseThrow(() -> ApplicationException.from(MemberErrorCode.MEMBER_NOT_FOUND));
     }
 
-    public MemberEntity getMemberByEmail(String email) {
-        return memberRepository.findByEmail(email)
+    public MemberEntity loadMemberById(Long memberId) {
+        return memberRepository.findById(memberId)
             .orElseThrow(() -> ApplicationException.from(AuthErrorCode.INVALID_CREDENTIALS));
     }
 }

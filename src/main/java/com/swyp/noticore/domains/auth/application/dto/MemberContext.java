@@ -1,12 +1,13 @@
-package com.swyp.noticore.domains.auth.application.dto.request;
+package com.swyp.noticore.domains.auth.application.dto;
 
 import com.swyp.noticore.domains.member.domain.constant.Role;
 import lombok.Builder;
 
 @Builder
-public record GenerateTokenRequest(
+public record MemberContext(
+    Role role,
     Long memberId,
-    Role role
+    String email
 ) {
 
 }

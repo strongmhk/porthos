@@ -1,5 +1,6 @@
 package com.swyp.noticore.domains.auth.application.mapper;
 
+import com.swyp.noticore.domains.auth.application.dto.MemberContext;
 import com.swyp.noticore.domains.auth.application.dto.request.GenerateTokenRequest;
 import com.swyp.noticore.domains.auth.application.dto.response.TokenResponse;
 import com.swyp.noticore.domains.member.domain.constant.Role;
@@ -15,11 +16,18 @@ public class AuthMapper {
             .build();
     }
 
-    public static GenerateTokenRequest mapToGenerateTokenRequest(String email, Role role, Long memberId) {
+    public static GenerateTokenRequest mapToGenerateTokenRequest(Role role, Long memberId) {
         return GenerateTokenRequest.builder()
-            .email(email)
             .role(role)
             .memberId(memberId)
+            .build();
+    }
+
+    public static MemberContext mapToMemberContext(Role role, Long memberId, String email) {
+        return MemberContext.builder()
+            .role(role)
+            .memberId(memberId)
+            .email(email)
             .build();
     }
 }
