@@ -1,7 +1,8 @@
 package com.swyp.noticore.domains.member.persistence.entity;
 
-import com.swyp.noticore.domains.template.persistence.entity.TemplateEntity;
 import com.swyp.noticore.global.entity.BaseTimeEntity;
+import java.util.List;
+import java.util.ArrayList;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -15,6 +16,10 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.CascadeType;
+import lombok.Builder;
+
 
 @Entity
 @Getter
@@ -27,10 +32,10 @@ public class GroupInfoEntity extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "template_id", unique = true)
-    private TemplateEntity template;
-
     @Column(unique = true, nullable = false, length = 50)
     private String name;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "groupInfo", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MemberGroupEntity> memberGroups = new ArrayList<>();
 }

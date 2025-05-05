@@ -1,22 +1,20 @@
 package com.swyp.noticore.domains.errorinfo.application.usecase;
 
 import com.swyp.noticore.domains.errorinfo.application.dto.response.MailContent;
-import com.swyp.noticore.domains.errorinfo.domain.service.EmailService;
-import com.swyp.noticore.domains.errorinfo.domain.service.EmlDownloadService;
-import com.swyp.noticore.domains.errorinfo.domain.service.ErrorInfoParsingService;
-import com.swyp.noticore.domains.errorinfo.domain.service.OncallService;
-import com.swyp.noticore.domains.errorinfo.domain.service.SmsService;
+import com.swyp.noticore.domains.errorinfo.domain.service.*;
+import com.swyp.noticore.domains.errorinfo.utils.EmailNoticeFormatter;
 import com.swyp.noticore.domains.member.application.dto.response.MemberInfo;
 import com.swyp.noticore.domains.member.application.mapper.MemberInfoMapper;
 import com.swyp.noticore.domains.member.domain.service.GroupMemberService;
 import com.swyp.noticore.global.annotation.architecture.UseCase;
 import com.swyp.noticore.global.constants.NationNumber;
-import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.io.InputStream;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Transactional
@@ -25,55 +23,70 @@ import org.springframework.transaction.annotation.Transactional;
 public class ErrorInfoUseCase {
 
     private final GroupMemberService groupMemberService;
-    private final EmlDownloadService emlDownloadService;
+    private final EmlManagementService emlManagementService;
     private final ErrorInfoParsingService errorInfoParsingService;
+    private final IncidentCommandService incidentCommandService;
     private final EmailService emailService;
     private final SmsService smsService;
     private final OncallService onCallService;
 
     public void processAndForward(Map<String, String> payload) {
-        InputStream inputStream = emlDownloadService.download(payload);
+        // 1. S3에서 .eml 파일 다운로드 및 파싱
+        InputStream inputStream = emlManagementService.getEmlFromS3(payload);
+        String s3Key = payload.get("key");
+
+        // 2. 제목 형식 검증 및 유효 그룹 검사 (내부에서 메일 반송 처리)
         MailContent mailContent = errorInfoParsingService.parseAndValidate(inputStream);
-
         String subject = mailContent.subject();
-        String groupName = subject.replaceAll(".*\\[GROUP:([^\\]]+)\\].*", "$1");
 
-        List<MemberInfo> groupMemberInfos = groupMemberService.getGroupMemberInfos(groupName);
+        // 3. 제목에서 그룹명 파싱
+        String groupSection = subject.replaceAll("(?i).*\\[emergency:([^\\]]+)\\].*", "$1").toLowerCase();
+        List<String> parsedGroupNames = Arrays.stream(groupSection.split(","))
+                .map(String::trim)
+                .filter(name -> !name.isEmpty())
+                .toList();
 
-        // 1. 이메일 전송
-        List<String> emailAddresses = MemberInfoMapper.mapToEmailAddresses(groupMemberInfos);
+        // 4. 존재하는 그룹 필터링
+        List<String> existingGroups = groupMemberService.filterExistingGroupNames(parsedGroupNames);
+        List<String> notFoundGroups = parsedGroupNames.stream()
+                .filter(name -> !existingGroups.contains(name))
+                .toList();
 
-        emailService.sendEmailAlert(mailContent.originalMessage(), emailAddresses, subject);
+        // 5. 그룹별 멤버 정보 매핑
+        Map<String, List<MemberInfo>> memberInfoByGroup = existingGroups.stream()
+                .collect(Collectors.toMap(
+                        groupName -> groupName,
+                        groupMemberService::getGroupMemberInfos,
+                        (a, b) -> b,
+                        LinkedHashMap::new
+                ));
 
-        // 2. SMS 전송
-        List<String> smsRecipients = MemberInfoMapper.mapToSmsRecipients(groupMemberInfos);
+        // 6. 자동 안내 메시지 생성
+        String noticeMessage = EmailNoticeFormatter.formatNotice(memberInfoByGroup, notFoundGroups);
 
-        if (!smsRecipients.isEmpty()) {
-            for (String smsRecipient : smsRecipients) {
-                smsService.sendSmsAlert(subject, formatKoreaPhoneNumber(smsRecipient));
-            }
-        }
+        // 7. incident_info + incident_group 저장 → incidentId 확보
+        Long incidentId = incidentCommandService.saveIncidentAndGroups(s3Key, existingGroups);
 
-        // 3. OnCall 전송
-        List<String> oncallRecipients = MemberInfoMapper.mapToOncallRecipients(groupMemberInfos);
+        // 8. 전체 수신 대상 집계
+        List<MemberInfo> allMembers = memberInfoByGroup.values().stream()
+                .flatMap(List::stream)
+                .toList();
 
-        if (!oncallRecipients.isEmpty()) {
-            for (String oncallRecipient : oncallRecipients) {
-                onCallService.triggerOnCall(subject, formatKoreaPhoneNumber(oncallRecipient));
+        // 9. Email 전송
+        List<String> emailAddresses = MemberInfoMapper.mapToEmailAddresses(allMembers);
+        emailService.sendEmailAlert(incidentId, mailContent.originalMessage(), emailAddresses, subject, noticeMessage);
 
-            }
-        }
+        // 10. SMS 전송
+        MemberInfoMapper.mapToSmsRecipients(allMembers).stream()
+                .map(this::formatKoreaPhoneNumber)
+                .forEach(phone -> smsService.sendSmsAlert(incidentId, subject, phone));
 
-        // 4. Slack 전송
-        List<String> slackRecipients = MemberInfoMapper.mapToSlackRecipients(groupMemberInfos);
+        // 11. OnCall 전송
+        MemberInfoMapper.mapToOncallRecipients(allMembers).stream()
+                .map(this::formatKoreaPhoneNumber)
+                .forEach(phone -> onCallService.triggerOnCall(incidentId, subject, phone));
 
-/*        if (!slackRecipients.isEmpty()) {
-            for (String slackRecipient : slackRecipients) {
-                slackService.sendSlackAlert(data, slackRecipient);
-            }
-        }*/
-
-        // TODO: 장애 정보 DB Insert
+        // TODO: Slack 전송 예정
     }
 
     private String formatKoreaPhoneNumber(String phoneNumber) {

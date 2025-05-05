@@ -17,13 +17,13 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 @Transactional
 @Service
 @RequiredArgsConstructor
-public class EmlDownloadService {
+public class EmlManagementService {
 
     private final S3Client s3Client = S3Client.builder()
         .region(Region.US_EAST_1)
         .build();
 
-    public InputStream download(Map<String, String> payload) {
+    public InputStream getEmlFromS3(Map<String, String> payload) {
         String bucket = payload.get("bucket");
         String key = payload.get("key");
 
@@ -31,7 +31,7 @@ public class EmlDownloadService {
         log.info("Bucket: {}", bucket);
         log.info("Key: {}", key);
 
-        // S3에서 .eml 다운로드
+        // S3에서 .eml In-Memory Load
         ResponseBytes<GetObjectResponse> objectBytes = s3Client.getObjectAsBytes(
             GetObjectRequest.builder().bucket(bucket).key(key).build()
         );
