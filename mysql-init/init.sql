@@ -12,10 +12,10 @@ CREATE TABLE `group_info` (
 -- 테이블: member_metadata
 CREATE TABLE `member_metadata` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '기본 키',
-  `slack_url` VARCHAR(50) NOT NULL COMMENT '회원 Slack Webhook URL',
-  `slack_noti` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Slack 알림 수신 여부',
+  `slack_url` VARCHAR(255) DEFAULT NULL COMMENT '회원 Slack Webhook URL',
+  `slack_noti` TINYINT(1) DEFAULT 0 COMMENT 'Slack 알림 수신 여부',
   `sms_noti` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'SMS 알림 수신 여부',
-  `oncall_noti` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'On-call 알림 수신 여부',
+  `oncall_noti` TINYINT(1) DEFAULT 0 COMMENT 'On-call 알림 수신 여부',
   `created_at` DATETIME NOT NULL COMMENT '생성 일시',
   `updated_at` DATETIME NOT NULL COMMENT '수정 일시',
   PRIMARY KEY (`id`)
