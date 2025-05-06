@@ -31,9 +31,10 @@ public class IncidentCommandService {
      * @param groupNames  유효 그룹명 리스트
      * @return 저장된 incident_id
      */
-    public Long saveIncidentAndGroups(String s3Key, List<String> groupNames) {
+    public Long saveIncidentAndGroups(String title, String s3Key, List<String> groupNames) {
         // 1. Incident 저장
         IncidentInfoEntity incident = IncidentInfoEntity.builder()
+                .title(title)
                 .s3Uuid(s3Key)
                 .registrationTime(LocalDateTime.now())
                 .build();

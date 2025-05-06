@@ -55,6 +55,7 @@ CREATE TABLE `member_group` (
 -- 테이블: incident_info
 CREATE TABLE `incident_info` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '기본 키',
+  `title` VARCHAR(255) NOT NULL COMMENT '장애 제목',
   `s3_uuid` VARCHAR(50) NOT NULL COMMENT 'S3 객체 UUID',
   `completion` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '처리 완료 시간',
   `registration_time` DATETIME NOT NULL COMMENT '등록 시각',

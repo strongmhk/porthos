@@ -27,6 +27,9 @@ public class IncidentInfoEntity extends BaseTimeEntity {
     @Column(name = "s3_uuid", nullable = false)
     private String s3Uuid;
 
+    @Column(name = "title", nullable = false)
+    private String title;
+
     private LocalDateTime completion;
     private LocalDateTime registrationTime;
     private LocalDateTime closingTime;

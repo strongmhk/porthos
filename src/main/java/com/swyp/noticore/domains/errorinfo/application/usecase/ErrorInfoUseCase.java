@@ -66,7 +66,8 @@ public class ErrorInfoUseCase {
         String noticeMessage = EmailNoticeFormatter.formatNotice(memberInfoByGroup, notFoundGroups);
 
         // 7. incident_info + incident_group 저장 → incidentId 확보
-        Long incidentId = incidentCommandService.saveIncidentAndGroups(s3Key, existingGroups);
+        String title = subject.replaceAll("(?i).*\\[emergency:[^\\]]+\\]\\s*", "");
+        Long incidentId = incidentCommandService.saveIncidentAndGroups(title, s3Key, existingGroups);
 
         // 8. 전체 수신 대상 집계
         List<MemberInfo> allMembers = memberInfoByGroup.values().stream()
