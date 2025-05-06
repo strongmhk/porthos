@@ -11,4 +11,6 @@ public interface GroupInfoRepository extends JpaRepository<GroupInfoEntity, Long
 
     @Query("SELECT g.name FROM GroupInfoEntity g WHERE g.name IN :names")
     List<String> findNameByNameIn(@Param("names") List<String> names);
+
+    List<GroupInfoEntity> findByNameIn(List<String> names);
 }

@@ -1,3 +1,5 @@
+USE porthos;
+
 -- 테이블: group_info
 CREATE TABLE `group_info` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '기본 키',
@@ -80,16 +82,12 @@ CREATE TABLE `notification_log` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '기본 키',
   `incident_id` BIGINT NOT NULL COMMENT '장애 ID',
   `member_id` BIGINT NOT NULL COMMENT '회원 ID',
-  `method` ENUM('EMAIL', 'SLACK', 'SMS', 'ONCALL') NOT NULL COMMENT '알림 수단',
-  `status` ENUM('SUCCESS', 'FAIL') NOT NULL COMMENT '성공/실패',
-  `sent_at` DATETIME NOT NULL COMMENT '발송 시각',
-  `retry_count` INT DEFAULT 0 COMMENT '재시도 횟수',
+  `created_at` DATETIME NOT NULL COMMENT '생성 일시',
+  `updated_at` DATETIME NOT NULL COMMENT '수정 일시',
   `is_verified` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '이 장애에 대한 인증 여부',
-  `verified_at` DATETIME COMMENT '인증 완료 시각',
   PRIMARY KEY (`id`),
   FOREIGN KEY (`incident_id`) REFERENCES `incident_info` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE,
   FOREIGN KEY (`member_id`) REFERENCES `member` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='알림 전파 로그 테이블';
-

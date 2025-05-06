@@ -26,6 +26,7 @@ public class ErrorInfoUseCase {
     private final EmlManagementService emlManagementService;
     private final ErrorInfoParsingService errorInfoParsingService;
     private final IncidentCommandService incidentCommandService;
+    private final NotificationLogCommandService notificationLogCommandService;
     private final EmailService emailService;
     private final SmsService smsService;
     private final OncallService onCallService;
@@ -72,19 +73,24 @@ public class ErrorInfoUseCase {
                 .flatMap(List::stream)
                 .toList();
 
-        // 9. Email 전송
-        List<String> emailAddresses = MemberInfoMapper.mapToEmailAddresses(allMembers);
-        emailService.sendEmailAlert(incidentId, mailContent.originalMessage(), emailAddresses, subject, noticeMessage);
+        // 9. 수신 대상별 notification_log 기록
+        allMembers.forEach(member ->
+                notificationLogCommandService.saveLog(incidentId, member.id())
+        );
 
-        // 10. SMS 전송
+        // 10. Email 전송
+        List<String> emailAddresses = MemberInfoMapper.mapToEmailAddresses(allMembers);
+        emailService.sendEmailAlert(mailContent.originalMessage(), emailAddresses, subject, noticeMessage);
+
+        // 11. SMS 전송
         MemberInfoMapper.mapToSmsRecipients(allMembers).stream()
                 .map(this::formatKoreaPhoneNumber)
-                .forEach(phone -> smsService.sendSmsAlert(incidentId, subject, phone));
+                .forEach(phone -> smsService.sendSmsAlert(subject, phone));
 
-        // 11. OnCall 전송
+        // 12. OnCall 전송
         MemberInfoMapper.mapToOncallRecipients(allMembers).stream()
                 .map(this::formatKoreaPhoneNumber)
-                .forEach(phone -> onCallService.triggerOnCall(incidentId, subject, phone));
+                .forEach(phone -> onCallService.triggerOnCall(subject, phone));
 
         // TODO: Slack 전송 예정
     }
