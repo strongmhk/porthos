@@ -1,9 +1,7 @@
 #!/bin/bash
 
-cd /home/ubuntu/porthos
-
 echo "[INFO] Starting MySQL & Redis containers..."
-docker-compose up -d
+cd /home/ubuntu/porthos && docker-compose up -d
 
 # 기다림 (MySQL, Redis가 뜰 때까지)
 until nc -z localhost 3306; do
