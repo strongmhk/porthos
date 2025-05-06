@@ -57,4 +57,8 @@ public class MemberEntity extends BaseTimeEntity {
     @Builder.Default
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MemberGroupEntity> memberGroups = new ArrayList<>();
+
+    public Long getId() {
+        return id;
+    }
 }

@@ -11,6 +11,8 @@ public interface MemberGroupRepository extends JpaRepository<MemberGroupEntity, 
 
     @Query("""
         SELECT new com.swyp.noticore.domains.member.application.dto.response.MemberInfo(
+            m.id,
+            m.name,
             m.email,
             m.phone,
             mm.slackUrl,
