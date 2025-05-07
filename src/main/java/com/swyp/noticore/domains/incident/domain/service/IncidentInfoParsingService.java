@@ -1,9 +1,9 @@
-package com.swyp.noticore.domains.errorinfo.domain.service;
+package com.swyp.noticore.domains.incident.domain.service;
 
 import static com.swyp.noticore.global.response.code.CommonErrorCode.BAD_REQUEST;
 import static com.swyp.noticore.global.response.code.CommonErrorCode.INTERNAL_SERVER_ERROR;
 
-import com.swyp.noticore.domains.errorinfo.application.dto.response.MailContent;
+import com.swyp.noticore.domains.incident.application.dto.response.MailContent;
 import com.swyp.noticore.domains.member.persistence.repository.GroupInfoRepository;
 import com.swyp.noticore.global.exception.ApplicationException;
 import jakarta.mail.Address;

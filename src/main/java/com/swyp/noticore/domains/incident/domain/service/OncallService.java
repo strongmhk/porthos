@@ -1,4 +1,4 @@
-package com.swyp.noticore.domains.errorinfo.domain.service;
+package com.swyp.noticore.domains.incident.domain.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

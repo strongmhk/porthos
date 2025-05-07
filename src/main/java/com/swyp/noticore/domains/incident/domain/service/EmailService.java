@@ -1,4 +1,4 @@
-package com.swyp.noticore.domains.errorinfo.domain.service;
+package com.swyp.noticore.domains.incident.domain.service;
 
 import static com.swyp.noticore.global.response.code.CommonErrorCode.INTERNAL_SERVER_ERROR;
 

@@ -1,4 +1,4 @@
-package com.swyp.noticore.domains.errorinfo.domain.service;
+package com.swyp.noticore.domains.incident.domain.service;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;

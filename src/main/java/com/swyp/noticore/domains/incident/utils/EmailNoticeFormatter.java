@@ -1,4 +1,4 @@
-package com.swyp.noticore.domains.errorinfo.utils;
+package com.swyp.noticore.domains.incident.utils;
 
 import com.swyp.noticore.domains.member.application.dto.response.MemberInfo;
 import java.util.List;

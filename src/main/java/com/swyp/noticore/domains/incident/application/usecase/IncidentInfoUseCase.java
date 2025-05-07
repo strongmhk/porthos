@@ -1,8 +1,8 @@
-package com.swyp.noticore.domains.errorinfo.application.usecase;
+package com.swyp.noticore.domains.incident.application.usecase;
 
-import com.swyp.noticore.domains.errorinfo.application.dto.response.MailContent;
-import com.swyp.noticore.domains.errorinfo.domain.service.*;
-import com.swyp.noticore.domains.errorinfo.utils.EmailNoticeFormatter;
+import com.swyp.noticore.domains.incident.application.dto.response.MailContent;
+import com.swyp.noticore.domains.incident.domain.service.*;
+import com.swyp.noticore.domains.incident.utils.EmailNoticeFormatter;
 import com.swyp.noticore.domains.member.application.dto.response.MemberInfo;
 import com.swyp.noticore.domains.member.application.mapper.MemberInfoMapper;
 import com.swyp.noticore.domains.member.domain.service.GroupMemberService;
@@ -94,6 +94,10 @@ public class IncidentInfoUseCase {
                 .forEach(phone -> onCallService.triggerOnCall(subject, phone));
 
         // TODO: Slack 전송 예정
+    }
+
+    public void getIncidentsByCompletion(Boolean completion) {
+
     }
 
     private String formatKoreaPhoneNumber(String phoneNumber) {
