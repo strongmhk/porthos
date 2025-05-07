@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo "[INFO] Preparing host volumes..."
+mkdir -p /var/porthos/mysql /var/porthos/redis
+
 echo "[INFO] Starting MySQL & Redis containers..."
 cd /home/ubuntu/porthos && docker-compose up -d
 
@@ -18,7 +21,7 @@ echo "[INFO] Launching Spring Boot application..."
 nohup java -jar /home/ubuntu/porthos/build/libs/noticore-0.0.1-SNAPSHOT.jar > /dev/null 2>&1 &
 
 # Spring 헬스체크
-until curl -fs http://localhost:8080/actuator/health; do
+until curl -fs http://localhost:8080/api/test; do
   echo "[INFO] Waiting for Spring Boot to be healthy..."
   sleep 3
 done
