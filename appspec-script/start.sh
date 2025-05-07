@@ -20,8 +20,26 @@ until nc -z localhost 6379; do
   sleep 2
 done
 
-echo "[INFO] Launching Spring Boot application..."
-nohup java -jar /home/ubuntu/porthos/build/libs/noticore-0.0.1-SNAPSHOT.jar > /home/ubuntu/porthos/app.log 2>&1 &
+# Spring Boot 헬스체크 기반 재시도
+MAX_RETRIES=5
+RETRY_DELAY=10
+COUNT=1
 
-echo "[INFO] Application started with PID $!"
-exit 0
+while [ $COUNT -le $MAX_RETRIES ]; do
+  echo "[INFO] Attempt $COUNT: Launching Spring Boot..."
+  sleep 10
+  nohup java -jar /home/ubuntu/porthos/build/libs/noticore-0.0.1-SNAPSHOT.jar > /home/ubuntu/porthos/app.log 2>&1 &
+
+  echo "[INFO] Checking /api/test health..."
+  if curl -fs http://localhost:8080/api/test > /dev/null; then
+    echo "[INFO] Spring Boot is healthy!"
+    exit 0
+  fi
+
+  echo "[WARN] Health check failed. Retrying in ${RETRY_DELAY}s..."
+  sleep $RETRY_DELAY
+  COUNT=$((COUNT+1))
+done
+
+echo "[ERROR] Spring Boot failed to start after $MAX_RETRIES attempts."
+exit 1
