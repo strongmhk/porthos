@@ -4,7 +4,7 @@ echo "[INFO] Preparing host volumes..."
 mkdir -p /var/porthos/mysql /var/porthos/redis
 
 echo "[INFO] Starting MySQL & Redis containers..."
-cd /home/ubuntu/porthos && docker-compose up -d
+cd /home/ubuntu/porthos && docker compose up -d
 
 # 기다림 (MySQL, Redis가 뜰 때까지)
 until nc -z localhost 3306; do
