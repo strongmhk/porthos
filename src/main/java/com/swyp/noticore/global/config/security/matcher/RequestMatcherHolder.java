@@ -46,8 +46,8 @@ public class RequestMatcherHolder {
         new RequestInfo(GET, "/favicon.ico",null),
 
         // error-info
-        new RequestInfo(GET, "/api/error-info/**",null),
-        new RequestInfo(POST, "/api/error-info/**",null),
+        new RequestInfo(GET, "/api/incidents/**",null),
+        new RequestInfo(POST, "/api/incidents/**",null),
 
         // 빌드 에러 방지를 위해 각 권한에 대한 RequestInfo가 최소 1개씩은 리스트에 있어야함
         // user
