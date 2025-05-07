@@ -10,4 +10,4 @@ hooks:
   ApplicationStart:
     - location: appspec-script/start.sh
       timeout: 120
-      runas: root
+      runas: ubuntu

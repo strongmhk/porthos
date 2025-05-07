@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.ArrayList;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import java.util.Optional;
 
 public interface GroupInfoRepository extends JpaRepository<GroupInfoEntity, Long> {
 
@@ -13,4 +14,6 @@ public interface GroupInfoRepository extends JpaRepository<GroupInfoEntity, Long
     List<String> findNameByNameIn(@Param("names") List<String> names);
 
     List<GroupInfoEntity> findByNameIn(List<String> names);
+
+    Optional<GroupInfoEntity> findByName(String name);
 }

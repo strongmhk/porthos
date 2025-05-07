@@ -3,6 +3,8 @@ package com.swyp.noticore.global.config.security.matcher;
 import static com.swyp.noticore.domains.member.domain.constant.Role.*;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpMethod.PUT;
+import static org.springframework.http.HttpMethod.DELETE;
 
 import com.swyp.noticore.domains.member.domain.constant.Role;
 import jakarta.annotation.Nullable;
@@ -48,6 +50,12 @@ public class RequestMatcherHolder {
         // error-info
         new RequestInfo(GET, "/api/error-info/**",null),
         new RequestInfo(POST, "/api/error-info/**",null),
+
+        // member
+        new RequestInfo(POST, "/api/member", null),
+        new RequestInfo(POST, "/api/member/get", null),
+        new RequestInfo(PUT, "/api/member", null),
+        new RequestInfo(DELETE, "/api/member", null),
 
         // 빌드 에러 방지를 위해 각 권한에 대한 RequestInfo가 최소 1개씩은 리스트에 있어야함
         // user
