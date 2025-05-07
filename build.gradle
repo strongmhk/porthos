@@ -1,6 +1,6 @@
 plugins {
 	id 'java'
-	id 'org.springframework.boot' version '3.4.4'
+	id 'org.springframework.boot' version '3.2.5'
 	id 'io.spring.dependency-management' version '1.1.7'
 }
 
@@ -24,6 +24,7 @@ repositories {
 }
 
 dependencies {
+
 	implementation platform('software.amazon.awssdk:bom:2.25.32') // 최신 BOM 사용
 
 	// AWS SDK
@@ -32,10 +33,20 @@ dependencies {
 	implementation 'software.amazon.awssdk:sns'
 	implementation 'software.amazon.awssdk:lambda'
 
+	// Slack
+	implementation("com.slack.api:slack-api-client:1.45.3")
+
 	// Spring
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.1.0'
+
+	// JWT
+	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+	implementation 'io.jsonwebtoken:jjwt-impl:0.11.5'
+	implementation 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 
 	// Hibernate
 	implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.9.9'
@@ -52,6 +63,7 @@ dependencies {
 
 	// DB
 	runtimeOnly 'com.mysql:mysql-connector-j'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'

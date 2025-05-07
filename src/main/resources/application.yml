@@ -1,7 +1,10 @@
 spring:
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+  config:
+    import:
+      - mysql.yml
+      - slack.yml
+      - jwt.yml
+      - redis.yml
   application:
     name: noticore
 

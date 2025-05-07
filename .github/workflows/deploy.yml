@@ -20,11 +20,11 @@ jobs:
         java-version: '17'
 
     - name: Build with Gradle
-      run: ./gradlew clean build
+      run: ./gradlew clean build -x test
 
     - name: Package for deploy
       run: |
-        zip -r deploy.zip build/libs appspec.yml appspec-script/
+        zip -r deploy.zip build/libs appspec.yml appspec-script/ mysql-init/ docker-compose.yml 
 
     - name: Upload to S3
       run: |

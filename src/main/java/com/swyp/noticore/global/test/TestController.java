@@ -1,78 +1,31 @@
 package com.swyp.noticore.global.test;
 
-import jakarta.mail.*;
-import jakarta.mail.internet.*;
+import com.swyp.noticore.infrastructure.slack.SlackService;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
-import software.amazon.awssdk.core.ResponseBytes;
-import software.amazon.awssdk.core.SdkBytes;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.lambda.LambdaClient;
-import software.amazon.awssdk.services.lambda.model.InvokeRequest;
-import software.amazon.awssdk.services.lambda.model.InvokeResponse;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-import software.amazon.awssdk.services.ses.SesClient;
-import software.amazon.awssdk.services.ses.model.RawMessage;
-import software.amazon.awssdk.services.ses.model.SendRawEmailRequest;
-import software.amazon.awssdk.services.sns.SnsClient;
-import software.amazon.awssdk.services.sns.model.MessageAttributeValue;
-import software.amazon.awssdk.services.sns.model.PublishRequest;
-import software.amazon.awssdk.services.sns.model.PublishResponse;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api")
+@RequiredArgsConstructor
 public class TestController {
 
     @GetMapping("/test")
-     public String test(HttpServletRequest request) {
-         String clientIp = request.getRemoteAddr();
-         String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-         return String.format("Backend Conn Success ~ !\nCurrent Backend IP: %s\nCurrent Time: %s", clientIp, now);
-     }
-    
-    private final S3Client s3Client = S3Client.builder()
-            .region(Region.US_EAST_1)
-            .build();
-
-    private final SesClient sesClient = SesClient.builder()
-            .region(Region.US_EAST_1)
-            .credentialsProvider(DefaultCredentialsProvider.create())
-            .build();
-
-    private final SnsClient snsClient = SnsClient.builder()
-        .region(Region.US_EAST_1)
-        .credentialsProvider(DefaultCredentialsProvider.create())
-        .build();
-    
-    private final LambdaClient lambdaClient = LambdaClient.builder()
-            .region(Region.US_EAST_1)
-            .credentialsProvider(DefaultCredentialsProvider.create())
-            .build();
-
-    @PostMapping("/notify")
-    public ResponseEntity<String> notify(@RequestBody Map<String, String> payload) {
-        CompletableFuture.runAsync(() -> {
-            try {
-                processAndForward(payload);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
-        return ResponseEntity.ok("Accepted");
+    public String test(HttpServletRequest request) {
+        String clientIp = request.getRemoteAddr();
+        String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        return String.format("Backend Conn Success ~ !\nCurrent Backend IP: %s\nCurrent Time: %s", clientIp, now);
     }
 
+    @GetMapping("/test/slack")
+    public ResponseEntity<String> sendSlackTextMessage() throws Exception {
+        slackService.sendErrorNotification();
+        return ResponseEntity.ok("Error Message is successfully sent to Slack.");
     private void processAndForward(Map<String, String> payload) throws Exception {
         String bucket = payload.get("bucket");
         String key = payload.get("key");
@@ -241,3 +194,5 @@ public class TestController {
         }
     }
 }
+
+                
