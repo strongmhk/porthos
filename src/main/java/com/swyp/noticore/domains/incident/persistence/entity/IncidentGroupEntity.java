@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "incident_group",
-       uniqueConstraints = @UniqueConstraint(columnNames = {"incident_id", "group_info_id"})
+       uniqueConstraints = @UniqueConstraint(columnNames = {"incident_info_id", "group_info_id"})
 )
 @Getter
 @SuperBuilder
@@ -23,7 +23,7 @@ public class IncidentGroupEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "incident_id", nullable = false)
+    @JoinColumn(name = "incident_info_id", nullable = false)
     private IncidentInfoEntity incident;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -19,7 +19,7 @@ public class NotificationLogEntity extends BaseTimeEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "incident_id", nullable = false)
+    @JoinColumn(name = "incident_info_id", nullable = false)
     private IncidentInfoEntity incident;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
