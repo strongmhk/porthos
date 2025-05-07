@@ -30,7 +30,7 @@ public class IncidentInfoEntity extends BaseTimeEntity {
     @Column(name = "title", nullable = false)
     private String title;
 
-    private LocalDateTime completion;
+    private boolean completion;
     private LocalDateTime registrationTime;
     private LocalDateTime closingTime;
     
