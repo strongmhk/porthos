@@ -1,5 +1,7 @@
 package com.swyp.noticore.domains.incident.domain.service;
 
+import static com.swyp.noticore.global.constants.S3Constants.EML_BUCKET;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Map;
@@ -24,16 +26,15 @@ public class EmlManagementService {
         .build();
 
     public InputStream getEmlFromS3(Map<String, String> payload) {
-        String bucket = payload.get("bucket");
         String key = payload.get("key");
 
         log.info("===== S3 EMAIL NOTIFY =====");
-        log.info("Bucket: {}", bucket);
+        log.info("Bucket: {}", EML_BUCKET);
         log.info("Key: {}", key);
 
         // S3에서 .eml In-Memory Load
         ResponseBytes<GetObjectResponse> objectBytes = s3Client.getObjectAsBytes(
-            GetObjectRequest.builder().bucket(bucket).key(key).build()
+            GetObjectRequest.builder().bucket(EML_BUCKET).key(key).build()
         );
 
         return new ByteArrayInputStream(objectBytes.asByteArray());
