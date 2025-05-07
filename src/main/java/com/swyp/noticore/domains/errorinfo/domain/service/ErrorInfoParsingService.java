@@ -16,6 +16,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.List;
+import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -42,30 +44,40 @@ public class ErrorInfoParsingService {
 
     public MailContent parseAndValidate(InputStream inputStream) {
         try {
-            // 원본 메일 파싱
             Session session = Session.getDefaultInstance(new Properties());
             MimeMessage originalMessage = new MimeMessage(session, inputStream);
             String subject = originalMessage.getSubject();
 
-            // 그룹명 추출
-            String groupName = subject.replaceAll(".*\\[GROUP:([^\\]]+)\\].*", "$1");
-
-            // 제목 유효성 검사
-            boolean isExistGroup = groupInfoRepository.existsByName(groupName);
-
-            if (subject.isBlank() || !subject.matches(".*\\[GROUP:[^\\]]+\\].*") || !isExistGroup) {
+            // 제목 유효성 검사: [emergency: ...] 패턴 (대소문자 무시)
+            if (subject == null || !subject.matches("(?i).*\\[emergency:[^\\]]+\\].*")) {
                 sendErrorEmail(session, originalMessage);
-                log.error("subject : {}, Invalid email subject format.", subject);
+                log.error("Invalid subject format: {}", subject);
+                throw ApplicationException.from(BAD_REQUEST);
+            }
+
+            // 그룹명 추출 및 파싱
+            String groupSection = subject.replaceAll("(?i).*\\[emergency:([^\\]]+)\\].*", "$1").toLowerCase();
+            List<String> groupNames = Arrays.stream(groupSection.split(","))
+                                            .map(String::trim)
+                                            .filter(name -> !name.isEmpty())
+                                            .toList();
+
+            // 존재하는 그룹이 하나라도 있는지 확인
+            List<String> existingGroups = groupInfoRepository.findNameByNameIn(groupNames);
+
+            if (groupNames.isEmpty() || existingGroups.isEmpty()) {
+                sendErrorEmail(session, originalMessage);
+                log.warn("No valid groups found. Extracted groups: {}, Subject: {}", groupNames, subject);
                 throw ApplicationException.from(BAD_REQUEST);
             }
 
             return MailContent.builder()
-                .originalMessage(originalMessage)
-                .subject(subject)
-                .build();
+                    .originalMessage(originalMessage)
+                    .subject(subject)
+                    .build();
 
         } catch (MessagingException e) {
-            log.error("Failed to parse error email.", e);
+            log.error("Failed to parse email.", e);
             throw ApplicationException.from(INTERNAL_SERVER_ERROR);
         }
     }
@@ -77,7 +89,7 @@ public class ErrorInfoParsingService {
 
             if (!sender.isBlank() && sender.contains("@")) {
                 MimeMessage errorReply = new MimeMessage(session);
-                errorReply.setFrom(new InternetAddress("no-reply@prod.aic.hanwhavision.cloud"));
+                errorReply.setFrom(new InternetAddress("no-reply@noticore.co.kr"));
                 errorReply.setRecipients(Message.RecipientType.TO, InternetAddress.parse(sender));
                 errorReply.setSubject("[ERROR] 그룹 메일 전송 실패 안내");
 
@@ -86,9 +98,9 @@ public class ErrorInfoParsingService {
                     "",
                     "보내주신 메일은 시스템에서 자동 처리되지 않았습니다.",
                     "",
-                    "사유: 메일 제목에 [GROUP:그룹명] 형식이 누락되었거나 존재하지 않는 그룹입니다.",
+                    "사유: 메일 제목 형식이 잘못되었거나( [Emergency:그룹명_1, 그룹명_2, ...] ) 존재하지 않는 그룹들입니다.",
                     "",
-                    "정확한 형식으로 다시 시도해주세요.",
+                    "정확한 형식 및 존재하는 그룹 이름으로 다시 시도해주세요.",
                     "");
 
                 errorReply.setText(body);

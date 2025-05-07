@@ -16,7 +16,12 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Builder;
 import lombok.experimental.SuperBuilder;
+import java.util.List;
+import java.util.ArrayList;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.CascadeType;
 
 @Entity
 @Getter
@@ -29,8 +34,8 @@ public class MemberEntity extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_metadata_id", nullable = false)
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "member_metadata_id", nullable = false, unique = true)
     private MemberMetadataEntity memberMetadata;
 
     @Column(nullable = false, length = 20)
@@ -40,7 +45,7 @@ public class MemberEntity extends BaseTimeEntity {
     @Column(nullable = false, unique = true, length = 50)
     private String email;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)
     private String password;
 
     @Column(nullable = false, length = 20)
@@ -48,4 +53,12 @@ public class MemberEntity extends BaseTimeEntity {
 
     @Column(nullable = false, length = 20)
     private String phone;
+    
+    @Builder.Default
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MemberGroupEntity> memberGroups = new ArrayList<>();
+
+    public Long getId() {
+        return id;
+    }
 }

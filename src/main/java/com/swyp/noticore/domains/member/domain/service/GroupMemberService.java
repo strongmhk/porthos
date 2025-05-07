@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.swyp.noticore.domains.member.persistence.repository.GroupInfoRepository;
 
 @Slf4j
 @Transactional(readOnly = true)
@@ -15,8 +16,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class GroupMemberService {
 
     private final MemberGroupRepository memberGroupRepository;
+    private final GroupInfoRepository groupInfoRepository;
 
     public List<MemberInfo> getGroupMemberInfos(String groupName) {
         return memberGroupRepository.findMemberInfoByGroupName(groupName);
+    }
+    public List<String> filterExistingGroupNames(List<String> groupNames) {
+        return groupInfoRepository.findNameByNameIn(groupNames);
     }
 }

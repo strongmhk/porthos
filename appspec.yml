@@ -1,5 +1,6 @@
 version: 0.0
 os: linux
+
 files:
   - source: /
     destination: /home/ubuntu/porthos
@@ -8,6 +9,5 @@ files:
 hooks:
   ApplicationStart:
     - location: appspec-script/start.sh
-      timeout: 60
+      timeout: 120
       runas: root
-
