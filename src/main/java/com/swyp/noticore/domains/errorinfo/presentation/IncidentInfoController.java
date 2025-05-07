@@ -1,6 +1,6 @@
 package com.swyp.noticore.domains.errorinfo.presentation;
 
-import com.swyp.noticore.domains.errorinfo.application.usecase.ErrorInfoUseCase;
+import com.swyp.noticore.domains.errorinfo.application.usecase.IncidentInfoUseCase;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
@@ -11,16 +11,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/error-info")
+@RequestMapping("/api/incidents")
 @RequiredArgsConstructor
-public class ErrorInfoController {
+public class IncidentInfoController {
 
-    private final ErrorInfoUseCase errorInfoUseCase;
+    private final IncidentInfoUseCase incidentInfoUseCase;
 
     @PostMapping("/notify")
     public ResponseEntity<String> notify(@RequestBody Map<String, String> payload) {
         CompletableFuture.runAsync(() -> {
-            errorInfoUseCase.processAndForward(payload);
+            incidentInfoUseCase.processAndForward(payload);
         });
         return ResponseEntity.ok("Accepted");
     }

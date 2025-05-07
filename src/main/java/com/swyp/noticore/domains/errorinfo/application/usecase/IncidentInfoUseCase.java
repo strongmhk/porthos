@@ -20,11 +20,11 @@ import java.util.stream.Collectors;
 @Transactional
 @UseCase
 @RequiredArgsConstructor
-public class ErrorInfoUseCase {
+public class IncidentInfoUseCase {
 
     private final GroupMemberService groupMemberService;
     private final EmlManagementService emlManagementService;
-    private final ErrorInfoParsingService errorInfoParsingService;
+    private final IncidentInfoParsingService incidentInfoParsingService;
     private final IncidentCommandService incidentCommandService;
     private final NotificationLogCommandService notificationLogCommandService;
     private final EmailService emailService;
@@ -37,7 +37,7 @@ public class ErrorInfoUseCase {
         String s3Key = payload.get("key");
 
         // 2. 제목 형식 검증 및 유효 그룹 검사 (내부에서 메일 반송 처리)
-        MailContent mailContent = errorInfoParsingService.parseAndValidate(inputStream);
+        MailContent mailContent = incidentInfoParsingService.parseAndValidate(inputStream);
         String subject = mailContent.subject();
 
         // 3. 제목에서 그룹명 파싱

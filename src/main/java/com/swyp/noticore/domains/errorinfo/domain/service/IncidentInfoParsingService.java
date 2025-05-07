@@ -33,7 +33,7 @@ import software.amazon.awssdk.services.ses.model.SendRawEmailRequest;
 @Transactional
 @Service
 @RequiredArgsConstructor
-public class ErrorInfoParsingService {
+public class IncidentInfoParsingService {
 
     private final GroupInfoRepository groupInfoRepository;
 
