@@ -1,5 +1,6 @@
 package com.swyp.noticore.domains.incident.domain.service;
 
+import static com.swyp.noticore.global.constants.SesConstants.FROM;
 import static com.swyp.noticore.global.response.code.CommonErrorCode.INTERNAL_SERVER_ERROR;
 
 import com.swyp.noticore.global.exception.ApplicationException;
@@ -48,7 +49,7 @@ public class EmailService {
         try {
             Session session = Session.getDefaultInstance(new Properties());
             MimeMessage forwardMessage = new MimeMessage(session);
-            forwardMessage.setFrom(new InternetAddress("no-reply@noticore.co.kr"));
+            forwardMessage.setFrom(new InternetAddress(FROM));
 
             if (!emailAddresses.isEmpty()) {
                 forwardMessage.setRecipients(Message.RecipientType.TO,

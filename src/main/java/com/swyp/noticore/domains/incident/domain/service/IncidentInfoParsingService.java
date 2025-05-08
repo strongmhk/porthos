@@ -1,5 +1,6 @@
 package com.swyp.noticore.domains.incident.domain.service;
 
+import static com.swyp.noticore.global.constants.SesConstants.FROM;
 import static com.swyp.noticore.global.response.code.CommonErrorCode.BAD_REQUEST;
 import static com.swyp.noticore.global.response.code.CommonErrorCode.INTERNAL_SERVER_ERROR;
 
@@ -15,9 +16,9 @@ import jakarta.mail.internet.MimeMessage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Properties;
-import java.util.List;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -89,7 +90,7 @@ public class IncidentInfoParsingService {
 
             if (!sender.isBlank() && sender.contains("@")) {
                 MimeMessage errorReply = new MimeMessage(session);
-                errorReply.setFrom(new InternetAddress("no-reply@noticore.co.kr"));
+                errorReply.setFrom(new InternetAddress(FROM));
                 errorReply.setRecipients(Message.RecipientType.TO, InternetAddress.parse(sender));
                 errorReply.setSubject("[ERROR] 그룹 메일 전송 실패 안내");
 
