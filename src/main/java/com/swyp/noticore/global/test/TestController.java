@@ -15,20 +15,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class TestController {
 
-    private final SlackService slackService;
-    
     @GetMapping("/test")
     public String test(HttpServletRequest request) {
         String clientIp = request.getRemoteAddr();
         String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         return String.format("Backend Conn Success ~ !\nCurrent Backend IP: %s\nCurrent Time: %s", clientIp, now);
     }
-
-    @GetMapping("/test/slack")
-    public ResponseEntity<String> sendSlackTextMessage() throws Exception {
-        slackService.sendErrorNotification();
-        return ResponseEntity.ok("Error Message is successfully sent to Slack.");
-    }
 }
-
-                

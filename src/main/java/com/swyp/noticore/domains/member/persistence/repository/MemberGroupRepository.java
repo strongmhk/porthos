@@ -27,4 +27,6 @@ public interface MemberGroupRepository extends JpaRepository<MemberGroupEntity, 
         WHERE gi.name = :groupName
     """)
     List<MemberInfo> findMemberInfoByGroupName(@Param("groupName") String groupName);
+
+    long countByGroupInfoId(Long groupInfoId);
 }
