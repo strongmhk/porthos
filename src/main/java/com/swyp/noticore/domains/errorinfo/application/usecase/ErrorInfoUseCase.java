@@ -1,5 +1,6 @@
 package com.swyp.noticore.domains.errorinfo.application.usecase;
 
+import com.slack.api.webhook.Payload;
 import com.swyp.noticore.domains.errorinfo.application.dto.response.MailContent;
 import com.swyp.noticore.domains.errorinfo.domain.service.*;
 import com.swyp.noticore.domains.errorinfo.utils.EmailNoticeFormatter;
@@ -30,6 +31,8 @@ public class ErrorInfoUseCase {
     private final EmailService emailService;
     private final SmsService smsService;
     private final OncallService onCallService;
+    private final SlackService slackService;
+    private final SlackMessageFormatter slackMessageFormatter;
 
     public void processAndForward(Map<String, String> payload) {
         // 1. S3에서 .eml 파일 다운로드 및 파싱
@@ -93,7 +96,17 @@ public class ErrorInfoUseCase {
                 .map(this::formatKoreaPhoneNumber)
                 .forEach(phone -> onCallService.triggerOnCall(subject, phone));
 
-        // TODO: Slack 전송 예정
+        // 13. Slack 전송
+        Payload slackPayload = slackMessageFormatter.formatGeneralErrorMessage(mailContent);
+        MemberInfoMapper.mapToSlackRecipients(allMembers).stream()
+                .forEach(url -> {
+                    try {
+                        slackService.sendSlackAlert(slackPayload, url);
+                    } catch (Exception e) {
+                        log.error("Failed to send Slack alert to {}: {}", url, e.getMessage());
+                    }
+                });
+
     }
 
     private String formatKoreaPhoneNumber(String phoneNumber) {
