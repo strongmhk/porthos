@@ -10,7 +10,6 @@ spring:
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/porthos?characterEncoding=UTF-8&serverTimezone=Asia/Seoul&autoReconnect=true&rewriteBatchedStatements=true
-    # url: jdbc:mysql://43.203.222.129:3306/porthos?characterEncoding=UTF-8&serverTimezone=Asia/Seoul&autoReconnect=true&rewriteBatchedStatements=true
-    username: root
-    password: test1234
+    url: jdbc:mysql://pjh-porthos.cvhrq7qa1p3t.ap-northeast-2.rds.amazonaws.com:13306/porthos?characterEncoding=UTF-8&serverTimezone=Asia/Seoul&autoReconnect=true&rewriteBatchedStatements=true
+    username: porthos
+    password: porthos123!

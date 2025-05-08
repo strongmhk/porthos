@@ -1,7 +1,12 @@
 spring:
   data:
     redis:
-      host: localhost
-      # host: 43.203.222.129
+      host: porthos-redis-cache-wajm0p.serverless.apn2.cache.amazonaws.com
       port: 6379
-      password: noticore1!
+      username: porthos
+      password: noticoreRedisSecure!123
+      ssl:
+        enable: true
+      lettuce:
+        ssl:
+          verify-peer: false
