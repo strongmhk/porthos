@@ -55,4 +55,10 @@ public class IncidentCommandService {
         log.info("Incident saved. ID={}, Groups={}", savedIncident.getId(), groupNames);
         return savedIncident.getId();
     }
+    
+    @Transactional(readOnly = true)
+    public IncidentInfoEntity findById(Long id) {
+         return incidentInfoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 장애를 찾을 수 없습니다. id=" + id));
+    }
 }

@@ -29,7 +29,14 @@ public class NotificationLogEntity extends BaseTimeEntity {
     @Column(name = "is_verified", nullable = false)
     private boolean isVerified;
 
+    @Column(name = "retry_count", nullable = false)
+    private int retryCount;
+
     public void setVerified(boolean verified) {
         this.isVerified = verified;
+    }
+
+    public void incrementRetryCount() {
+        this.retryCount++;
     }
 }

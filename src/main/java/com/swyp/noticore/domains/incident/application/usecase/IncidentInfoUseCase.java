@@ -3,6 +3,7 @@ package com.swyp.noticore.domains.incident.application.usecase;
 import com.swyp.noticore.domains.incident.application.dto.response.IncidentDetailResponse;
 import com.swyp.noticore.domains.incident.application.dto.response.IncidentInfoResponse;
 import com.swyp.noticore.domains.incident.application.dto.response.MailContent;
+import com.swyp.noticore.domains.incident.application.dto.response.IncidentUpdateRequest;
 import com.swyp.noticore.domains.incident.domain.service.EmailService;
 import com.swyp.noticore.domains.incident.domain.service.EmlManagementService;
 import com.swyp.noticore.domains.incident.domain.service.IncidentCommandService;
@@ -15,6 +16,7 @@ import com.swyp.noticore.domains.incident.utils.EmailNoticeFormatter;
 import com.swyp.noticore.domains.member.application.dto.response.MemberInfo;
 import com.swyp.noticore.domains.member.application.mapper.MemberInfoMapper;
 import com.swyp.noticore.domains.member.domain.service.GroupMemberQueryService;
+import com.swyp.noticore.domains.incident.persistence.entity.IncidentInfoEntity;
 import com.swyp.noticore.global.annotation.architecture.UseCase;
 import com.swyp.noticore.global.constants.NationNumber;
 import java.io.InputStream;
@@ -22,6 +24,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -118,5 +121,15 @@ public class IncidentInfoUseCase {
 
     private String formatKoreaPhoneNumber(String phoneNumber) {
         return NationNumber.KOREA.getValue() + phoneNumber.substring(1);
+    }
+
+    public void updateIncident(Long incidentId, IncidentUpdateRequest request) {
+        IncidentInfoEntity incident = incidentCommandService.findById(incidentId);
+
+        if (request.completion() != null) {
+                boolean completed = request.completion();
+                incident.setCompletion(completed);
+                incident.setClosingTime(completed ? LocalDateTime.now() : null);
+        }
     }
 }

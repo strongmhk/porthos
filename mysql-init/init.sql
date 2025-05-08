@@ -86,6 +86,7 @@ CREATE TABLE `notification_log` (
   `created_at` DATETIME NOT NULL COMMENT '생성 일시',
   `updated_at` DATETIME NOT NULL COMMENT '수정 일시',
   `is_verified` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '이 장애에 대한 인증 여부',
+  `retry_count` INT DEFAULT 0 COMMENT '알림 전파 재시도 횟수',
   PRIMARY KEY (`id`),
   FOREIGN KEY (`incident_info_id`) REFERENCES `incident_info` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE,
