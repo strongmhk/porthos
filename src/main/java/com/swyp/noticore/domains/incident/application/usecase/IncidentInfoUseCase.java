@@ -1,21 +1,31 @@
 package com.swyp.noticore.domains.incident.application.usecase;
 
+import com.swyp.noticore.domains.incident.application.dto.response.IncidentDetailResponse;
 import com.swyp.noticore.domains.incident.application.dto.response.IncidentInfoResponse;
 import com.swyp.noticore.domains.incident.application.dto.response.MailContent;
-import com.swyp.noticore.domains.incident.domain.service.*;
+import com.swyp.noticore.domains.incident.domain.service.EmailService;
+import com.swyp.noticore.domains.incident.domain.service.EmlManagementService;
+import com.swyp.noticore.domains.incident.domain.service.IncidentCommandService;
+import com.swyp.noticore.domains.incident.domain.service.IncidentInfoParsingService;
+import com.swyp.noticore.domains.incident.domain.service.IncidentQueryService;
+import com.swyp.noticore.domains.incident.domain.service.NotificationLogCommandService;
+import com.swyp.noticore.domains.incident.domain.service.OncallService;
+import com.swyp.noticore.domains.incident.domain.service.SmsService;
 import com.swyp.noticore.domains.incident.utils.EmailNoticeFormatter;
 import com.swyp.noticore.domains.member.application.dto.response.MemberInfo;
 import com.swyp.noticore.domains.member.application.mapper.MemberInfoMapper;
 import com.swyp.noticore.domains.member.domain.service.GroupMemberQueryService;
 import com.swyp.noticore.global.annotation.architecture.UseCase;
 import com.swyp.noticore.global.constants.NationNumber;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.io.InputStream;
-import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Transactional
@@ -100,6 +110,10 @@ public class IncidentInfoUseCase {
 
     public List<IncidentInfoResponse> getIncidentInfosByCompletion(boolean completion) {
         return incidentQueryService.getIncidentInfosByCompletion(completion);
+    }
+
+    public IncidentDetailResponse getIncidentDetail(Long incidentId) {
+        return incidentQueryService.getIncidentDetail(incidentId);
     }
 
     private String formatKoreaPhoneNumber(String phoneNumber) {
