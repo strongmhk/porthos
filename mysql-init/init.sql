@@ -68,11 +68,11 @@ CREATE TABLE `incident_info` (
 -- 테이블: incident_group
 CREATE TABLE `incident_group` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '기본 키',
-  `incident_id` BIGINT NOT NULL COMMENT '장애 ID',
+  `incident_info_id` BIGINT NOT NULL COMMENT '장애 ID',
   `group_info_id` BIGINT NOT NULL COMMENT '그룹 ID',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `UK_incident_group` (`incident_id`, `group_info_id`),
-  FOREIGN KEY (`incident_id`) REFERENCES `incident_info` (`id`)
+  UNIQUE KEY `UK_incident_group` (`incident_info_id`, `group_info_id`),
+  FOREIGN KEY (`incident_info_id`) REFERENCES `incident_info` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE,
   FOREIGN KEY (`group_info_id`) REFERENCES `group_info` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE
@@ -81,13 +81,13 @@ CREATE TABLE `incident_group` (
 -- 테이블: notification_log
 CREATE TABLE `notification_log` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '기본 키',
-  `incident_id` BIGINT NOT NULL COMMENT '장애 ID',
+  `incident_info_id` BIGINT NOT NULL COMMENT '장애 ID',
   `member_id` BIGINT NOT NULL COMMENT '회원 ID',
   `created_at` DATETIME NOT NULL COMMENT '생성 일시',
   `updated_at` DATETIME NOT NULL COMMENT '수정 일시',
   `is_verified` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '이 장애에 대한 인증 여부',
   PRIMARY KEY (`id`),
-  FOREIGN KEY (`incident_id`) REFERENCES `incident_info` (`id`)
+  FOREIGN KEY (`incident_info_id`) REFERENCES `incident_info` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE,
   FOREIGN KEY (`member_id`) REFERENCES `member` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE

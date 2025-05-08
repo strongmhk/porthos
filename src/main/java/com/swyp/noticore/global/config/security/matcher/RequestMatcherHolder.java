@@ -1,10 +1,10 @@
 package com.swyp.noticore.global.config.security.matcher;
 
 import static com.swyp.noticore.domains.member.domain.constant.Role.*;
+import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpMethod.PUT;
-import static org.springframework.http.HttpMethod.DELETE;
 
 import com.swyp.noticore.domains.member.domain.constant.Role;
 import jakarta.annotation.Nullable;
@@ -48,8 +48,16 @@ public class RequestMatcherHolder {
         new RequestInfo(GET, "/favicon.ico",null),
 
         // error-info
-        new RequestInfo(GET, "/api/error-info/**",null),
-        new RequestInfo(POST, "/api/error-info/**",null),
+        new RequestInfo(GET, "/api/incidents/**",null),
+        new RequestInfo(POST, "/api/incidents/**",null),
+        new RequestInfo(PUT, "/api/incidents/**",null),
+        new RequestInfo(DELETE, "/api/incidents/**",null),
+
+        // groups
+        new RequestInfo(GET, "/api/groups/**",null),
+        new RequestInfo(POST, "/api/groups/**",null),
+        new RequestInfo(PUT, "/api/groups/**",null),
+        new RequestInfo(DELETE, "/api/groups/**",null),
 
         // member
         new RequestInfo(POST, "/api/member", null),
@@ -58,7 +66,6 @@ public class RequestMatcherHolder {
         new RequestInfo(DELETE, "/api/member", null),
 
         // 빌드 에러 방지를 위해 각 권한에 대한 RequestInfo가 최소 1개씩은 리스트에 있어야함
-        // user
         new RequestInfo(GET, "/api/members/**", USER),
         new RequestInfo(GET, "/api/admin/**", ADMIN),
         new RequestInfo(GET, "/api/super/**", SUPER_ADMIN)
