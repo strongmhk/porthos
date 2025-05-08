@@ -1,15 +1,16 @@
 package com.swyp.noticore.domains.incident.persistence.repository;
 
-import static com.swyp.noticore.domains.incident.persistence.entity.QIncidentGroupEntity.*;
+import static com.swyp.noticore.domains.incident.persistence.entity.QIncidentGroupEntity.incidentGroupEntity;
 import static com.swyp.noticore.domains.incident.persistence.entity.QIncidentInfoEntity.incidentInfoEntity;
-import static com.swyp.noticore.domains.incident.persistence.entity.QNotificationLogEntity.*;
-import static com.swyp.noticore.domains.member.persistence.entity.QGroupInfoEntity.*;
-import static com.swyp.noticore.domains.member.persistence.entity.QMemberEntity.*;
-import static com.swyp.noticore.domains.member.persistence.entity.QMemberGroupEntity.*;
+import static com.swyp.noticore.domains.incident.persistence.entity.QNotificationLogEntity.notificationLogEntity;
+import static com.swyp.noticore.domains.member.persistence.entity.QGroupInfoEntity.groupInfoEntity;
+import static com.swyp.noticore.domains.member.persistence.entity.QMemberEntity.memberEntity;
+import static com.swyp.noticore.domains.member.persistence.entity.QMemberGroupEntity.memberGroupEntity;
 
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.swyp.noticore.domains.incident.application.dto.response.IncidentDetailResponse;
 import com.swyp.noticore.domains.incident.application.dto.response.IncidentInfoResponse;
 import com.swyp.noticore.domains.incident.application.mapper.IncidentInfoMapper;
 import com.swyp.noticore.domains.incident.persistence.entity.QIncidentGroupEntity;
@@ -83,6 +84,43 @@ public class IncidentInfoQueryDslRepositoryImpl implements IncidentInfoQueryDslR
             memberCountTuples,
             verifiedCountTuples
         );
+    }
+
+    @Override
+    public IncidentDetailResponse findIncidentDetailById(Long incidentId) {
+        QIncidentInfoEntity incident = incidentInfoEntity;
+        QIncidentGroupEntity incidentGroup = incidentGroupEntity;
+        QGroupInfoEntity group = groupInfoEntity;
+        QMemberGroupEntity memberGroup = memberGroupEntity;
+        QMemberEntity member = memberEntity;
+        QNotificationLogEntity log = notificationLogEntity;
+
+        List<Tuple> results = jpaQueryFactory
+            .select(
+                incident.id,
+                incident.s3Uuid,
+                incident.title,
+                group.id,
+                group.name,
+                member.id,
+                member.name,
+                log.isVerified
+            )
+            .from(incident)
+            .join(incident.groups, incidentGroup)
+            .join(incidentGroup.groupInfo, group)
+            .join(group.memberGroups, memberGroup)
+            .join(memberGroup.member, member)
+            .leftJoin(log)
+            .on(log.incident.eq(incident).and(log.member.eq(member)))
+            .where(incidentIdEq(incidentId))
+            .fetch();
+
+        return IncidentInfoMapper.mapToDetailResponse(results);
+    }
+
+    private static BooleanExpression incidentIdEq(Long incidentId) {
+        return incidentInfoEntity.id.eq(incidentId);
     }
 
     private static BooleanExpression completionEq(boolean completion) {
