@@ -45,12 +45,12 @@ public class IncidentInfoController {
     }
 
     @PutMapping("/{incidentId}")
-    public ResponseEntity<Void> updateIncident(
+    public ResponseEntity<String> updateIncident(
         @PathVariable Long incidentId,
         @RequestBody IncidentUpdateRequest request
     ) {
         incidentInfoUseCase.updateIncident(incidentId, request);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok("updated");
     }
 
 }
