@@ -6,7 +6,7 @@ import com.swyp.noticore.domains.incident.domain.service.*;
 import com.swyp.noticore.domains.incident.utils.EmailNoticeFormatter;
 import com.swyp.noticore.domains.member.application.dto.response.MemberInfo;
 import com.swyp.noticore.domains.member.application.mapper.MemberInfoMapper;
-import com.swyp.noticore.domains.member.domain.service.GroupMemberService;
+import com.swyp.noticore.domains.member.domain.service.GroupMemberQueryService;
 import com.swyp.noticore.global.annotation.architecture.UseCase;
 import com.swyp.noticore.global.constants.NationNumber;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class IncidentInfoUseCase {
 
-    private final GroupMemberService groupMemberService;
+    private final GroupMemberQueryService groupMemberQueryService;
     private final EmlManagementService emlManagementService;
     private final IncidentInfoParsingService incidentInfoParsingService;
     private final IncidentCommandService incidentCommandService;
@@ -50,7 +50,7 @@ public class IncidentInfoUseCase {
                 .toList();
 
         // 4. 존재하는 그룹 필터링
-        List<String> existingGroups = groupMemberService.filterExistingGroupNames(parsedGroupNames);
+        List<String> existingGroups = groupMemberQueryService.filterExistingGroupNames(parsedGroupNames);
         List<String> notFoundGroups = parsedGroupNames.stream()
                 .filter(name -> !existingGroups.contains(name))
                 .toList();
@@ -59,7 +59,7 @@ public class IncidentInfoUseCase {
         Map<String, List<MemberInfo>> memberInfoByGroup = existingGroups.stream()
                 .collect(Collectors.toMap(
                         groupName -> groupName,
-                        groupMemberService::getGroupMemberInfos,
+                        groupMemberQueryService::getGroupMemberInfos,
                         (a, b) -> b,
                         LinkedHashMap::new
                 ));
