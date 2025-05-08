@@ -1,5 +1,6 @@
 package com.swyp.noticore.domains.incident.application.usecase;
 
+import com.swyp.noticore.domains.incident.application.dto.response.IncidentInfoResponse;
 import com.swyp.noticore.domains.incident.application.dto.response.MailContent;
 import com.swyp.noticore.domains.incident.domain.service.*;
 import com.swyp.noticore.domains.incident.utils.EmailNoticeFormatter;
@@ -26,6 +27,7 @@ public class IncidentInfoUseCase {
     private final EmlManagementService emlManagementService;
     private final IncidentInfoParsingService incidentInfoParsingService;
     private final IncidentCommandService incidentCommandService;
+    private final IncidentQueryService incidentQueryService;
     private final NotificationLogCommandService notificationLogCommandService;
     private final EmailService emailService;
     private final SmsService smsService;
@@ -96,8 +98,8 @@ public class IncidentInfoUseCase {
         // TODO: Slack 전송 예정
     }
 
-    public void getIncidentsByCompletion(Boolean completion) {
-
+    public List<IncidentInfoResponse> getIncidentInfosByCompletion(boolean completion) {
+        return incidentQueryService.getIncidentInfosByCompletion(completion);
     }
 
     private String formatKoreaPhoneNumber(String phoneNumber) {
