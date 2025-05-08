@@ -1,6 +1,8 @@
 package com.swyp.noticore.domains.incident.presentation;
 
+import com.swyp.noticore.domains.incident.application.dto.response.IncidentInfoResponse;
 import com.swyp.noticore.domains.incident.application.usecase.IncidentInfoUseCase;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +30,8 @@ public class IncidentInfoController {
     }
 
     @GetMapping("/list")
-    public ResponseEntity<String> list(@RequestParam Boolean completion) {
-        incidentInfoUseCase.getIncidentsByCompletion(completion);
-        return null;
+    public ResponseEntity<Map<String, Object>> list(@RequestParam boolean completion) {
+        List<IncidentInfoResponse> incidentInfos = incidentInfoUseCase.getIncidentInfosByCompletion(completion);
+        return ResponseEntity.ok(Map.of("incidents", incidentInfos));
     }
 }
