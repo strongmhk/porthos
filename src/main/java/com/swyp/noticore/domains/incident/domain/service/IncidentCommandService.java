@@ -36,6 +36,7 @@ public class IncidentCommandService {
         IncidentInfoEntity incident = IncidentInfoEntity.builder()
                 .title(title)
                 .s3Uuid(s3Key)
+                .completion(false)
                 .registrationTime(LocalDateTime.now())
                 .build();
 
