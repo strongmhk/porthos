@@ -1,17 +1,11 @@
 package com.swyp.noticore.domains.incident.application.usecase;
 
+import com.slack.api.webhook.Payload;
 import com.swyp.noticore.domains.incident.application.dto.response.IncidentDetailResponse;
 import com.swyp.noticore.domains.incident.application.dto.response.IncidentInfoResponse;
 import com.swyp.noticore.domains.incident.application.dto.response.MailContent;
 import com.swyp.noticore.domains.incident.application.dto.response.IncidentUpdateRequest;
-import com.swyp.noticore.domains.incident.domain.service.EmailService;
-import com.swyp.noticore.domains.incident.domain.service.EmlManagementService;
-import com.swyp.noticore.domains.incident.domain.service.IncidentCommandService;
-import com.swyp.noticore.domains.incident.domain.service.IncidentInfoParsingService;
-import com.swyp.noticore.domains.incident.domain.service.IncidentQueryService;
-import com.swyp.noticore.domains.incident.domain.service.NotificationLogCommandService;
-import com.swyp.noticore.domains.incident.domain.service.OncallService;
-import com.swyp.noticore.domains.incident.domain.service.SmsService;
+import com.swyp.noticore.domains.incident.domain.service.*;
 import com.swyp.noticore.domains.incident.utils.EmailNoticeFormatter;
 import com.swyp.noticore.domains.member.application.dto.response.MemberInfo;
 import com.swyp.noticore.domains.member.application.mapper.MemberInfoMapper;
@@ -45,6 +39,8 @@ public class IncidentInfoUseCase {
     private final EmailService emailService;
     private final SmsService smsService;
     private final OncallService onCallService;
+    private final SlackService slackService;
+    private final com.swyp.noticore.domains.incident.domain.service.SlackMessageFormatter slackMessageFormatter;
 
     public void processAndForward(Map<String, String> payload) {
         // 1. S3에서 .eml 파일 다운로드 및 파싱
@@ -108,7 +104,17 @@ public class IncidentInfoUseCase {
                 .map(this::formatKoreaPhoneNumber)
                 .forEach(phone -> onCallService.triggerOnCall(subject, phone));
 
-        // TODO: Slack 전송 예정
+        // 13. Slack 전송
+        Payload slackPayload = slackMessageFormatter.formatGeneralErrorMessage(title);
+        MemberInfoMapper.mapToSlackRecipients(allMembers).stream()
+                .forEach(url -> {
+                    try {
+                        slackService.sendSlackAlert(slackPayload, url);
+                    } catch (Exception e) {
+                        log.error("Failed to send Slack alert to {}: {}", url, e.getMessage());
+                    }
+                });
+
     }
 
     public List<IncidentInfoResponse> getIncidentInfosByCompletion(boolean completion) {
