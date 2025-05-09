@@ -105,7 +105,7 @@ public class IncidentInfoUseCase {
                 .forEach(phone -> onCallService.triggerOnCall(subject, phone));
 
         // 13. Slack 전송
-        Payload slackPayload = slackMessageFormatter.formatGeneralErrorMessage(mailContent);
+        Payload slackPayload = slackMessageFormatter.formatGeneralErrorMessage(title);
         MemberInfoMapper.mapToSlackRecipients(allMembers).stream()
                 .forEach(url -> {
                     try {
