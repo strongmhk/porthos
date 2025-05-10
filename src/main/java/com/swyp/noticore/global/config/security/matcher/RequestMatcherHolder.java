@@ -5,6 +5,7 @@ import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpMethod.PUT;
+import static org.springframework.http.HttpMethod.PATCH;
 
 import com.swyp.noticore.domains.member.domain.constant.Role;
 import jakarta.annotation.Nullable;
@@ -47,10 +48,10 @@ public class RequestMatcherHolder {
         new RequestInfo(GET, "/webjars/**",null),
         new RequestInfo(GET, "/favicon.ico",null),
 
-        // error-info
+        // incidents
         new RequestInfo(GET, "/api/incidents/**",null),
         new RequestInfo(POST, "/api/incidents/**",null),
-        new RequestInfo(PUT, "/api/incidents/**",null),
+        new RequestInfo(PATCH, "/api/incidents/**",null),
         new RequestInfo(DELETE, "/api/incidents/**",null),
 
         // groups
