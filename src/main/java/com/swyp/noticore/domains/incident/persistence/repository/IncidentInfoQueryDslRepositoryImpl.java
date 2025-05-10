@@ -38,52 +38,29 @@ public class IncidentInfoQueryDslRepositoryImpl implements IncidentInfoQueryDslR
         QMemberEntity member = memberEntity;
         QMemberGroupEntity memberGroup = memberGroupEntity;
 
-        // incident 정보 + groupNames 조회
-        List<Tuple> incidentGroupTuples = jpaQueryFactory
+        List<Tuple> results = jpaQueryFactory
             .select(
                 incident.id,
                 incident.title,
                 incident.registrationTime,
                 incident.closingTime,
-                group.name
-            )
-            .from(incident)
-            .leftJoin(incident.groups, incidentGroup)
-            .leftJoin(incidentGroup.groupInfo, group)
-            .where(completionEq(completion))
-            .fetch();
-
-        // incident별 totalMemberCount
-        List<Tuple> memberCountTuples = jpaQueryFactory
-            .select(
-                incident.id,
-                member.id.countDistinct()
+                group.id,
+                group.name,
+                member.id,
+                member.name,
+                log.isVerified
             )
             .from(incident)
             .join(incident.groups, incidentGroup)
             .join(incidentGroup.groupInfo, group)
-            .join(memberGroup).on(memberGroup.groupInfo.id.eq(group.id))
+            .join(group.memberGroups, memberGroup)
             .join(memberGroup.member, member)
+            .leftJoin(log)
+                .on(log.incident.eq(incident).and(log.member.eq(member)))
             .where(completionEq(completion))
-            .groupBy(incident.id)
             .fetch();
 
-        // incident별 verifiedCount
-        List<Tuple> verifiedCountTuples = jpaQueryFactory
-            .select(
-                log.incident.id,
-                log.member.id.count()
-            )
-            .from(log)
-            .where(log.isVerified.isTrue())
-            .groupBy(log.incident.id)
-            .fetch();
-
-        return IncidentInfoMapper.mapFrom(
-            incidentGroupTuples,
-            memberCountTuples,
-            verifiedCountTuples
-        );
+        return IncidentInfoMapper.mapNestedIncidentResponse(results);
     }
 
     @Override
@@ -97,14 +74,16 @@ public class IncidentInfoQueryDslRepositoryImpl implements IncidentInfoQueryDslR
 
         List<Tuple> results = jpaQueryFactory
             .select(
-                incident.id,
-                incident.s3Uuid,
-                incident.title,
-                group.id,
-                group.name,
-                member.id,
-                member.name,
-                log.isVerified
+                incident.id,                // 0
+                incident.s3Uuid,            // 1
+                incident.title,             // 2
+                incident.registrationTime,  // 3 
+                incident.closingTime,       // 4 
+                group.id,                   // 5
+                group.name,                 // 6
+                member.id,                  // 7
+                member.name,                // 8
+                log.isVerified              // 9
             )
             .from(incident)
             .join(incident.groups, incidentGroup)
@@ -112,7 +91,7 @@ public class IncidentInfoQueryDslRepositoryImpl implements IncidentInfoQueryDslR
             .join(group.memberGroups, memberGroup)
             .join(memberGroup.member, member)
             .leftJoin(log)
-            .on(log.incident.eq(incident).and(log.member.eq(member)))
+                .on(log.incident.eq(incident).and(log.member.eq(member)))
             .where(incidentIdEq(incidentId))
             .fetch();
 
