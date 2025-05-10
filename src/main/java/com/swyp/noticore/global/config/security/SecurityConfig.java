@@ -74,7 +74,7 @@ public class SecurityConfig {
         //     "http://localhost:8080",
         //     "http://localhost:5173"
         // ));
-        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
 
         configuration.setAllowedMethods(Arrays.asList(

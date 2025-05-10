@@ -1,5 +1,6 @@
 package com.swyp.noticore.domains.incident.application.dto.response;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.Builder;
 
@@ -9,5 +10,7 @@ public record IncidentDetailResponse(
     String bucket,
     String s3Uuid,
     String title,
+    LocalDateTime registrationTime,
+    LocalDateTime closingTime,
     List<IncidentGroupResponse> groups
 ) {}

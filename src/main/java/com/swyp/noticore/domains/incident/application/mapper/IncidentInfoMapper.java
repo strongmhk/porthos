@@ -5,6 +5,7 @@ import com.swyp.noticore.domains.incident.application.dto.response.IncidentDetai
 import com.swyp.noticore.domains.incident.application.dto.response.IncidentGroupMemberResponse;
 import com.swyp.noticore.domains.incident.application.dto.response.IncidentGroupResponse;
 import com.swyp.noticore.domains.incident.application.dto.response.IncidentInfoResponse;
+import com.swyp.noticore.domains.incident.persistence.entity.*;
 import com.swyp.noticore.global.constants.S3Constants;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -16,82 +17,75 @@ import java.util.stream.Collectors;
 
 public class IncidentInfoMapper {
 
-    public static List<IncidentInfoResponse> mapFrom(
-        List<Tuple> groupTuples,
-        List<Tuple> totalMemberTuples,
-        List<Tuple> verifiedTuples
-    ) {
-        Map<Long, IncidentInfoResponse.IncidentInfoResponseBuilder> map = new HashMap<>();
+    public static List<IncidentInfoResponse> mapNestedIncidentResponse(List<Tuple> results) {
+        Map<Long, IncidentInfoResponse> incidentMap = new LinkedHashMap<>();
 
-        // group 정보와 기본 incident 데이터 초기화
-        for (Tuple t : groupTuples) {
-            Long incidentId = t.get(0, Long.class);
-            String title = t.get(1, String.class);
-            LocalDateTime registrationTime = t.get(2, LocalDateTime.class);
-            LocalDateTime closeTime = t.get(3, LocalDateTime.class);
-            String groupName = t.get(4, String.class);
+        for (Tuple tuple : results) {
+            // index 기준: 0:incidentId, 1:title, 2:regTime, 3:closeTime, 4:groupId, 5:groupName, 6:memberId, 7:memberName, 8:isVerified
+            Long incidentId = tuple.get(0, Long.class);
+            String title = tuple.get(1, String.class);
+            LocalDateTime registrationTime = tuple.get(2, LocalDateTime.class);
+            LocalDateTime closingTime = tuple.get(3, LocalDateTime.class);
+            Long groupId = tuple.get(4, Long.class);
+            String groupName = tuple.get(5, String.class);
+            Long memberId = tuple.get(6, Long.class);
+            String memberName = tuple.get(7, String.class);
+            Boolean isVerified = tuple.get(8, Boolean.class);
 
-            // builder 생성 또는 가져오기
-            IncidentInfoResponse.IncidentInfoResponseBuilder builder = map.computeIfAbsent(incidentId, id ->
-                IncidentInfoResponse.builder()
-                    .id(id)
-                    .title(title)
-                    .registrationTime(registrationTime)
-                    .closingTime(closeTime)
-                    .groupNames(new ArrayList<>())
-            );
+            // Incident 생성 또는 조회
+            IncidentInfoResponse incident = incidentMap.computeIfAbsent(incidentId, id -> IncidentInfoResponse.builder()
+                .id(id)
+                .title(title)
+                .registrationTime(registrationTime)
+                .closingTime(closingTime)
+                .groups(new ArrayList<>())
+                .build());
 
-            // 중복 방지 후 group name 추가
-            List<String> groupNames = builder.build().getGroupNames();
-            if (groupName != null && !groupNames.contains(groupName)) {
-                groupNames.add(groupName);
+            // Group 찾기 또는 생성
+            List<IncidentGroupResponse> groups = incident.getGroups();
+            IncidentGroupResponse group = groups.stream()
+                .filter(g -> g.id().equals(groupId))
+                .findFirst()
+                .orElseGet(() -> {
+                    IncidentGroupResponse g = IncidentGroupResponse.builder()
+                        .id(groupId)
+                        .name(groupName)
+                        .members(new ArrayList<>())
+                        .build();
+                    groups.add(g);
+                    return g;
+                });
+
+            // 중복 멤버 방지 후 추가
+            if (group.members().stream().noneMatch(m -> m.id().equals(memberId))) {
+                group.members().add(new IncidentGroupMemberResponse(
+                    memberId,
+                    memberName,
+                    Boolean.TRUE.equals(isVerified)
+                ));
             }
         }
 
-        // totalMemberCount 설정
-        for (Tuple t : totalMemberTuples) {
-            Long incidentId = t.get(0, Long.class);
-            Long count = t.get(1, Long.class);
-
-            IncidentInfoResponse.IncidentInfoResponseBuilder builder = map.get(incidentId);
-            if (builder != null) {
-                builder.totalMemberCount(count);
-            }
-        }
-
-        // verifiedCount 설정
-        for (Tuple t : verifiedTuples) {
-            Long incidentId = t.get(0, Long.class);
-            Long count = t.get(1, Long.class);
-
-            IncidentInfoResponse.IncidentInfoResponseBuilder builder = map.get(incidentId);
-            if (builder != null) {
-                builder.verifiedCount(count);
-            }
-        }
-
-        // 최종 build
-        return map.values().stream()
-            .map(IncidentInfoResponse.IncidentInfoResponseBuilder::build)
-            .collect(Collectors.toList());
+        return new ArrayList<>(incidentMap.values());
     }
 
     public static IncidentDetailResponse mapToDetailResponse(List<Tuple> tuples) {
-
         Tuple first = tuples.get(0);
         Long incidentId = first.get(0, Long.class);
         String s3Uuid = first.get(1, String.class);
         String title = first.get(2, String.class);
+        LocalDateTime registrationTime = first.get(3, LocalDateTime.class);
+        LocalDateTime closingTime = first.get(4, LocalDateTime.class);
         String bucket = S3Constants.EML_BUCKET;
 
         Map<Long, IncidentGroupResponse> groupMap = new LinkedHashMap<>();
 
         for (Tuple tuple : tuples) {
-            Long groupId = tuple.get(3, Long.class);
-            String groupName = tuple.get(4, String.class);
-            Long memberId = tuple.get(5, Long.class);
-            String memberName = tuple.get(6, String.class);
-            Boolean isVerified = Boolean.TRUE.equals(tuple.get(7, Boolean.class));
+            Long groupId = tuple.get(5, Long.class);
+            String groupName = tuple.get(6, String.class);
+            Long memberId = tuple.get(7, Long.class);
+            String memberName = tuple.get(8, String.class);
+            Boolean isVerified = Boolean.TRUE.equals(tuple.get(9, Boolean.class));
 
             groupMap
                 .computeIfAbsent(groupId, id -> IncidentGroupResponse.builder()
@@ -107,9 +101,11 @@ public class IncidentInfoMapper {
         return IncidentDetailResponse
             .builder()
             .incidentId(incidentId)
-            .bucket(bucket)
             .s3Uuid(s3Uuid)
             .title(title)
+            .registrationTime(registrationTime)
+            .closingTime(closingTime)
+            .bucket(bucket)
             .groups(new ArrayList<>(groupMap.values()))
             .build();
     }

@@ -11,6 +11,8 @@ import com.swyp.noticore.domains.member.persistence.repository.MemberMetadataRep
 import com.swyp.noticore.domains.member.persistence.repository.MemberRepository;
 import com.swyp.noticore.domains.member.persistence.entity.GroupInfoEntity;
 import com.swyp.noticore.domains.member.persistence.repository.GroupInfoRepository;
+import com.swyp.noticore.domains.incident.persistence.repository.IncidentInfoRepository;
+import com.swyp.noticore.domains.incident.persistence.entity.IncidentInfoEntity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,6 +29,7 @@ public class MemberCommandService {
     private final GroupInfoRepository groupInfoRepository;
     private final MemberMetadataRepository memberMetadataRepository;
     private final MemberGroupRepository memberGroupRepository;
+    private final IncidentInfoRepository incidentInfoRepository;
 
     public void insert(MemberRequest request) {
         GroupInfoEntity group = groupInfoRepository.findByName(request.groupName())
@@ -109,19 +112,16 @@ public class MemberCommandService {
 
     public void deleteMember(MemberKeyRequest request) {
         MemberEntity member = memberRepository.findByGroupNameAndNameAndEmail(
-                request.groupName(), request.name(), request.email()
+            request.groupName(), request.name(), request.email()
         ).orElseThrow(() -> new IllegalArgumentException("멤버를 찾을 수 없습니다."));
 
-        // 삭제 전, 이 멤버가 속한 그룹 목록 확보
         List<GroupInfoEntity> groups = member.getMemberGroups().stream()
-                .map(MemberGroupEntity::getGroupInfo)
-                .distinct()
-                .toList();
+            .map(MemberGroupEntity::getGroupInfo)
+            .distinct()
+            .toList();
 
-        // 멤버 삭제 (연결된 memberGroup도 orphanRemoval로 자동 삭제됨)
-        memberRepository.delete(member);
+        memberRepository.delete(member); // orphanRemoval 적용됨
 
-        // 각 그룹마다, 멤버가 0명이면 그룹도 삭제
         for (GroupInfoEntity group : groups) {
             long memberCount = memberGroupRepository.countByGroupInfoId(group.getId());
 
@@ -129,6 +129,13 @@ public class MemberCommandService {
                 log.info("그룹에 남은 멤버가 없어 그룹 삭제: {}", group.getName());
                 groupInfoRepository.delete(group);
             }
+        }
+
+        // 추가: group 없는 orphan incident 삭제
+        List<IncidentInfoEntity> orphanIncidents = incidentInfoRepository.findAllWithNoGroups();
+        if (!orphanIncidents.isEmpty()) {
+            log.info("그룹 연결이 끊긴 장애 {}건 삭제", orphanIncidents.size());
+            incidentInfoRepository.deleteAll(orphanIncidents);
         }
     }
 }
