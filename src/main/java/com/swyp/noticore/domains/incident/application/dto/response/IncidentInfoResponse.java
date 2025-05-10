@@ -1,23 +1,21 @@
 package com.swyp.noticore.domains.incident.application.dto.response;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.swyp.noticore.domains.incident.application.dto.response.IncidentGroupResponse;
 
+@Data
 @Builder
-@Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class IncidentInfoResponse {
     private Long id;
+    private String title;
     private LocalDateTime registrationTime;
     private LocalDateTime closingTime;
-    private String title;
-    private List<String> groupNames = new ArrayList<>();
-    private long verifiedCount;
-    private long totalMemberCount;
+    private List<IncidentGroupResponse> groups;
 }
