@@ -125,6 +125,10 @@ public class IncidentInfoUseCase {
         return incidentQueryService.getIncidentDetail(incidentId);
     }
 
+    public void verifyIncident(Long incidentId, Long memberId) {
+        notificationLogCommandService.markAsVerified(incidentId, memberId);
+    }
+
     private String formatKoreaPhoneNumber(String phoneNumber) {
         return NationNumber.KOREA.getValue() + phoneNumber.substring(1);
     }
