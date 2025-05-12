@@ -6,6 +6,7 @@ import com.swyp.noticore.domains.incident.application.dto.response.IncidentInfoR
 import com.swyp.noticore.domains.incident.application.dto.response.MailContent;
 import com.swyp.noticore.domains.incident.application.dto.response.IncidentUpdateRequest;
 import com.swyp.noticore.domains.incident.domain.service.*;
+import com.swyp.noticore.domains.incident.persistence.entity.NotificationLogEntity;
 import com.swyp.noticore.domains.incident.utils.EmailNoticeFormatter;
 import com.swyp.noticore.domains.member.application.dto.response.MemberInfo;
 import com.swyp.noticore.domains.member.application.mapper.MemberInfoMapper;
@@ -19,6 +20,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.time.LocalDateTime;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,7 +45,7 @@ public class IncidentInfoUseCase {
     private final SmsService smsService;
     private final OncallService onCallService;
     private final SlackService slackService;
-    private final com.swyp.noticore.domains.incident.domain.service.SlackMessageFormatter slackMessageFormatter;
+    private final SlackMessageFormatter slackMessageFormatter;
 
     public void processAndForward(Map<String, String> payload) {
         // 1. S3에서 .eml 파일 다운로드 및 파싱
@@ -115,6 +120,36 @@ public class IncidentInfoUseCase {
                     }
                 });
 
+        // 14. 장애 확인 안 할 시 OnCall, SMS 반복 알림 (5분마다 총 세 번씩)
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(allMembers.size());
+        for (MemberInfo member : allMembers) {
+            AtomicInteger count = new AtomicInteger(0);
+            executorService.scheduleAtFixedRate(() -> {
+                try {
+                    NotificationLogEntity notiLog = notificationLogCommandService.getNotificationLog(incidentId, member.id());
+                    if (!notiLog.isVerified() && count.get() < 3) {
+                        String phone = formatKoreaPhoneNumber(member.phone());
+                        if (member.oncallNoti()) {
+                            onCallService.triggerOnCall(subject, phone);
+                            log.info("OnCall 알림을 재전송하였습니다. ({})번째", count.get()+1);
+                        }
+                        if (member.smsNoti()) {
+                            smsService.sendSmsAlert(subject, phone);
+                            log.info("SMS 알림을 전송하였습니다. ({})번째", count.get()+1);
+                        }
+
+                        count.incrementAndGet();
+                    }
+                    if (count.get() >= 3) {
+                        log.info("알림 재전송을 마칩니다.");
+                        executorService.shutdown();
+                    }
+                } catch (Exception e) {
+                    log.error("Member {} 알림 전송 중 에러 발생: {}", member.id(), e.getMessage());
+                }
+            }, 0, 5, TimeUnit.MINUTES);
+
+        }
     }
 
     public List<IncidentInfoResponse> getIncidentInfosByCompletion(boolean completion) {
@@ -123,6 +158,10 @@ public class IncidentInfoUseCase {
 
     public IncidentDetailResponse getIncidentDetail(Long incidentId) {
         return incidentQueryService.getIncidentDetail(incidentId);
+    }
+
+    public void verifyIncident(Long incidentId, Long memberId) {
+        notificationLogCommandService.markAsVerified(incidentId, memberId);
     }
 
     private String formatKoreaPhoneNumber(String phoneNumber) {
