@@ -29,13 +29,6 @@ public class MemberInfoMapper {
             .toList();
     }
 
-    public static List<String> mapToUnverifiedOncallRecipients(List<MemberInfo> groupMemberInfos) {
-        return groupMemberInfos.stream()
-                .filter(memberInfo -> memberInfo.oncallNoti() && StringUtils.hasText(memberInfo.phone()))
-                .map(MemberInfo::phone)
-                .toList();
-    }
-
     private static final String SLACK_WEBHOOK_PATTERN =
         "^https://hooks\\.slack\\.com/services/[A-Z0-9]+/[A-Z0-9]+/[a-zA-Z0-9]+$";
 
