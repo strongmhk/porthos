@@ -6,7 +6,6 @@ import com.swyp.noticore.domains.incident.application.dto.response.IncidentInfoR
 import com.swyp.noticore.domains.incident.application.dto.response.MailContent;
 import com.swyp.noticore.domains.incident.application.dto.response.IncidentUpdateRequest;
 import com.swyp.noticore.domains.incident.domain.service.*;
-import com.swyp.noticore.domains.incident.persistence.entity.NotificationLogEntity;
 import com.swyp.noticore.domains.incident.utils.EmailNoticeFormatter;
 import com.swyp.noticore.domains.member.application.dto.response.MemberInfo;
 import com.swyp.noticore.domains.member.application.mapper.MemberInfoMapper;

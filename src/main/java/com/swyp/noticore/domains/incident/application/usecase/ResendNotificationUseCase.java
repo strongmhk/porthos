@@ -1,6 +1,6 @@
 package com.swyp.noticore.domains.incident.application.usecase;
 
-import com.swyp.noticore.domains.incident.domain.service.NotificationLogCommandService;
+import com.swyp.noticore.domains.incident.domain.service.NotificationLogQueryService;
 import com.swyp.noticore.domains.incident.domain.service.OncallService;
 import com.swyp.noticore.domains.incident.domain.service.SmsService;
 import com.swyp.noticore.domains.incident.persistence.entity.NotificationLogEntity;
@@ -22,17 +22,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 @RequiredArgsConstructor
 public class ResendNotificationUseCase {
 
-    private final NotificationLogCommandService notificationLogCommandService;
+    private final NotificationLogQueryService notificationLogQueryService;
     private final OncallService oncallService;
     private final SmsService smsService;
 
     public void resendNotification (Long incidentId, MemberInfo member, String subject) {
         AtomicInteger count = new AtomicInteger(0);
+        // 비동기 처리
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
 
         scheduledExecutorService.scheduleAtFixedRate(() -> {
                 try {
-                    NotificationLogEntity notiLog = notificationLogCommandService.getNotificationLog(incidentId, member.id());
+                    NotificationLogEntity notiLog = notificationLogQueryService.getNotificationLog(incidentId, member.id());
                     String phone = formatKoreaPhoneNumber(member.phone());
 
                     if (count.get() >= 3 || notiLog.isVerified()) {
