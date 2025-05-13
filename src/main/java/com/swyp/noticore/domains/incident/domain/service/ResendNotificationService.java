@@ -1,31 +1,27 @@
-package com.swyp.noticore.domains.incident.application.usecase;
+package com.swyp.noticore.domains.incident.domain.service;
 
-import com.swyp.noticore.domains.incident.domain.service.NotificationLogQueryService;
-import com.swyp.noticore.domains.incident.domain.service.OncallService;
-import com.swyp.noticore.domains.incident.domain.service.SmsService;
 import com.swyp.noticore.domains.incident.persistence.entity.NotificationLogEntity;
 import com.swyp.noticore.domains.member.application.dto.response.MemberInfo;
-import com.swyp.noticore.global.annotation.architecture.UseCase;
 import com.swyp.noticore.global.constants.NationNumber;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
-@Transactional
-@UseCase
+@Service
 @RequiredArgsConstructor
-public class ResendNotificationUseCase {
+public class ResendNotificationService {
 
     private final NotificationLogQueryService notificationLogQueryService;
     private final OncallService oncallService;
     private final SmsService smsService;
 
+    @Transactional
     public void resendNotification (Long incidentId, MemberInfo member, String subject) {
         AtomicInteger count = new AtomicInteger(0);
         // 비동기 처리
