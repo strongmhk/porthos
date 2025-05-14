@@ -74,12 +74,12 @@ public class IncidentInfoUseCase {
                         LinkedHashMap::new
                 ));
 
-        // 6. 자동 안내 메시지 생성
-        String noticeMessage = EmailNoticeFormatter.formatNotice(memberInfoByGroup, notFoundGroups);
-
-        // 7. incident_info + incident_group 저장 → incidentId 확보
+        // 6. incident_info + incident_group 저장 → incidentId 확보
         String title = subject.replaceAll("(?i).*\\[emergency:[^\\]]+\\]\\s*", "");
         Long incidentId = incidentCommandService.saveIncidentAndGroups(title, s3Key, existingGroups);
+
+        // 7. 자동 안내 메시지 생성
+        String noticeMessage = EmailNoticeFormatter.formatNotice(memberInfoByGroup, notFoundGroups, incidentId);
 
         // 8. 전체 수신 대상 집계
         List<MemberInfo> allMembers = memberInfoByGroup.values().stream()
