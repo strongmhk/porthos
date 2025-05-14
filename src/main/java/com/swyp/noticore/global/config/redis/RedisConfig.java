@@ -30,7 +30,13 @@ public class RedisConfig {
         redisStandaloneConfiguration.setHostName(host);
         redisStandaloneConfiguration.setPort(port);
         redisStandaloneConfiguration.setPassword(password);
-        return new LettuceConnectionFactory(redisStandaloneConfiguration);
+
+        LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
+            .useSsl()                          // TLS 사용 명시
+            .disablePeerVerification()         // verify-peer: false 와 동일
+            .build();
+
+        return new LettuceConnectionFactory(redisStandaloneConfiguration, clientConfig);
     }
 
     @Bean
