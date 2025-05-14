@@ -52,7 +52,7 @@ public class RequestMatcherHolder {
         new RequestInfo(GET, "/api/incidents/**",null),
         new RequestInfo(POST, "/api/incidents/**",null),
         new RequestInfo(PUT, "/api/incidents/**",null),
-        new RequestInfo(PATCH, "/api/incidents/**",null),
+        new RequestInfo(PATCH, "/api/incidents/**",USER),
         new RequestInfo(DELETE, "/api/incidents/**",null),
 
         // groups

@@ -40,7 +40,8 @@ public class IncidentInfoUseCase {
     private final SmsService smsService;
     private final OncallService onCallService;
     private final SlackService slackService;
-    private final com.swyp.noticore.domains.incident.domain.service.SlackMessageFormatter slackMessageFormatter;
+    private final SlackMessageFormatter slackMessageFormatter;
+    private final ResendNotificationService resendNotificationService;
 
     public void processAndForward(Map<String, String> payload) {
         // 1. S3에서 .eml 파일 다운로드 및 파싱
@@ -115,6 +116,10 @@ public class IncidentInfoUseCase {
                     }
                 });
 
+        // 14. 장애 확인 안 할 시 OnCall, SMS 반복 알림 (5분마다 총 세 번씩)
+        for (MemberInfo member : allMembers) {
+            resendNotificationService.resendNotification(incidentId, member, subject);
+        }
     }
 
     public List<IncidentInfoResponse> getIncidentInfosByCompletion(boolean completion) {
@@ -123,6 +128,10 @@ public class IncidentInfoUseCase {
 
     public IncidentDetailResponse getIncidentDetail(Long incidentId) {
         return incidentQueryService.getIncidentDetail(incidentId);
+    }
+
+    public void verifyIncident(Long incidentId, Long memberId) {
+        notificationLogCommandService.markAsVerified(incidentId, memberId);
     }
 
     private String formatKoreaPhoneNumber(String phoneNumber) {
