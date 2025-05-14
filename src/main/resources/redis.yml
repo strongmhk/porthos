@@ -10,3 +10,4 @@ spring:
       lettuce:
         ssl:
           verify-peer: false
+

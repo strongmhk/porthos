@@ -1,5 +1,6 @@
 package com.swyp.noticore.domains.member.domain.service;
 
+import com.swyp.noticore.domains.auth.utils.PasswordEncoderUtil;
 import com.swyp.noticore.domains.member.application.dto.request.MemberKeyRequest;
 import com.swyp.noticore.domains.member.application.dto.request.MemberRequest;
 import com.swyp.noticore.domains.member.application.dto.response.MemberInfo;
@@ -55,10 +56,13 @@ public class MemberCommandService {
 
         memberMetadataRepository.save(metadata);
 
+        String rawPassword = request.password();
+        String encodedPassword = PasswordEncoderUtil.encodePassword(rawPassword);
+
         MemberEntity member = MemberEntity.builder()
             .name(request.name())
             .email(request.email())
-            .password(request.password()) // TODO: 암호화 필요
+            .password(encodedPassword)
             .phone(request.phone())
             .role(request.role())
             .memberMetadata(metadata)
@@ -100,8 +104,13 @@ public class MemberCommandService {
 
         MemberMetadataEntity meta = member.getMemberMetadata();
 
+        String rawPassword = request.password();
+
         if (request.phone() != null) member.setPhone(request.phone());
-        if (request.password() != null) member.setPassword(request.password()); // TODO: 암호화 필요
+        if (rawPassword != null) {
+            String encodedPassword = PasswordEncoderUtil.encodePassword(rawPassword);
+            member.setPassword(encodedPassword); 
+        }
         if (request.role() != null) member.setRole(request.role());
 
         if (request.smsNoti() != null) meta.setSmsNoti(request.smsNoti());
