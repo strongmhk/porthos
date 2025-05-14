@@ -25,20 +25,25 @@ public class RedisConfig {
     @Value("${spring.data.redis.password}")
     private String password;
 
+    @Value("${spring.data.redis.username}")
+    private String username;
+
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
         RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration();
         redisStandaloneConfiguration.setHostName(host);
         redisStandaloneConfiguration.setPort(port);
+        redisStandaloneConfiguration.setUsername(username);
         redisStandaloneConfiguration.setPassword(password);
 
         LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
-            .useSsl()                          // TLS 사용 명시
-            .disablePeerVerification()         // verify-peer: false 와 동일
+            .useSsl()
+            .disablePeerVerification()
             .build();
 
         return new LettuceConnectionFactory(redisStandaloneConfiguration, clientConfig);
     }
+
 
     @Bean
     public RedisTemplate<String, String> redisTemplate() {
