@@ -1,31 +1,31 @@
+#spring:
+#  jpa:
+#    hibernate:
+#      ddl-auto: none
+#    properties:
+#      hibernate:
+#        default_batch_fetch_size: 100
+#        format_sql: true
+#        show_sql: true
+#
+#  datasource:
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+#    url: jdbc:mysql://localhost:3306/porthos?characterEncoding=UTF-8&serverTimezone=Asia/Seoul&autoReconnect=true&rewriteBatchedStatements=true
+#    username: root
+#    password: test1234
+
 spring:
-  jpa:
-    hibernate:
-      ddl-auto: none
-    properties:
-      hibernate:
-        default_batch_fetch_size: 100
-        format_sql: true
-        show_sql: true
+ jpa:
+   hibernate:
+     ddl-auto: none
+   properties:
+     hibernate:
+       default_batch_fetch_size: 100
+       format_sql: true
+       show_sql: true
 
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/porthos?characterEncoding=UTF-8&serverTimezone=Asia/Seoul&autoReconnect=true&rewriteBatchedStatements=true
-    username: root
-    password: test1234
-
-# spring:
-#   jpa:
-#     hibernate:
-#       ddl-auto: none
-#     properties:
-#       hibernate:
-#         default_batch_fetch_size: 100
-#         format_sql: true
-#         show_sql: true
-
-#   datasource:
-#     driver-class-name: com.mysql.cj.jdbc.Driver
-#     url: jdbc:mysql://pjh-porthos.cvhrq7qa1p3t.ap-northeast-2.rds.amazonaws.com:13306/porthos?characterEncoding=UTF-8&serverTimezone=Asia/Seoul&autoReconnect=true&rewriteBatchedStatements=true
-#     username: porthos
-#     password: porthos123!
+ datasource:
+   driver-class-name: com.mysql.cj.jdbc.Driver
+   url: jdbc:mysql://pjh-porthos.cvhrq7qa1p3t.ap-northeast-2.rds.amazonaws.com:13306/porthos?characterEncoding=UTF-8&serverTimezone=Asia/Seoul&autoReconnect=true&rewriteBatchedStatements=true
+   username: porthos
+   password: porthos123!
