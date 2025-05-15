@@ -69,17 +69,23 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // configuration.setAllowedOrigins(Arrays.asList(
-        //     "http://localhost:3000",
-        //     "http://localhost:8080",
-        //     "http://localhost:5173"
-        // ));
-        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowedOrigins(Arrays.asList(
+             "http://localhost:3000",
+             "http://localhost:8080",
+             "http://localhost:5173",
+             "https://www.noticore.co.kr"
+        ));
+
+        configuration.setAllowedHeaders(Arrays.asList(
+            "Authorization",
+            "Content-Type",
+            "X-Requested-With"
+        ));
 
         configuration.setAllowedMethods(Arrays.asList(
             "GET",
             "POST",
+            "PUT",
             "DELETE",
             "PATCH",
             "OPTIONS"

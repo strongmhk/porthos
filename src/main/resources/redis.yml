@@ -11,3 +11,11 @@ spring:
         ssl:
           verify-peer: false
 
+
+#spring:
+#  data:
+#    redis:
+#      host: localhost
+#      # host: 43.203.222.129
+#      port: 6379
+#      password: noticore1!

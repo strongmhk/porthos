@@ -1,5 +1,6 @@
 package com.swyp.noticore.global.utils;
 
+import com.swyp.noticore.global.constants.SameSitePolicy;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -10,14 +11,31 @@ import org.springframework.stereotype.Component;
 @Component
 public class CookieUtils {
 
-    public static Cookie createCookie(String key, String value, int maxAgeSec, boolean isHttpOnly) {
-        Cookie cookie = new Cookie(key, value);
-        cookie.setMaxAge(maxAgeSec);
-//        cookie.setSecure(true);
-        cookie.setPath("/");
-        cookie.setHttpOnly(isHttpOnly);
+    public static String addCookie(
+        String name,
+        String value,
+        int maxAgeSeconds,
+        boolean httpOnly,
+        boolean secure,
+        SameSitePolicy sameSitePolicy
+    ) {
+        StringBuilder cookieBuilder = new StringBuilder();
+        cookieBuilder.append(name).append("=").append(value)
+            .append("; Max-Age=").append(maxAgeSeconds)
+            .append("; Path=/");
 
-        return cookie;
+        if (secure) {
+            cookieBuilder.append("; Secure");
+        }
+        if (httpOnly) {
+            cookieBuilder.append("; HttpOnly");
+        }
+
+        if (sameSitePolicy != null) {
+            cookieBuilder.append("; SameSite=").append(sameSitePolicy.getValue());
+        }
+
+        return cookieBuilder.toString();
     }
 
     public static void deleteCookie(HttpServletResponse response, String key) {
