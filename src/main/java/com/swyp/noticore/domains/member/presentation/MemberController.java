@@ -1,17 +1,23 @@
 package com.swyp.noticore.domains.member.presentation;
 
 import com.swyp.noticore.domains.member.application.dto.request.MemberRequest;
-import com.swyp.noticore.domains.member.application.dto.request.MemberKeyRequest;
 import com.swyp.noticore.domains.member.application.dto.response.MemberInfo;
 import com.swyp.noticore.domains.member.application.usecase.MemberCommandUseCase;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/member")
+@RequestMapping("/api/members")
 @RequiredArgsConstructor
 @Validated
 public class MemberController {
@@ -24,21 +30,21 @@ public class MemberController {
         return ResponseEntity.ok("Inserted");
     }
 
-    @PostMapping("/get")
-    public ResponseEntity<MemberInfo> get(@RequestBody @Valid MemberKeyRequest request) {
-        MemberInfo member = memberCommandUseCase.get(request);
+    @GetMapping("/{memberId}")
+    public ResponseEntity<MemberInfo> get(@PathVariable Long memberId) {
+        MemberInfo member = memberCommandUseCase.get(memberId);
         return ResponseEntity.ok(member);
     }
 
-    @PutMapping
-    public ResponseEntity<String> update(@RequestBody @Valid MemberRequest request) {
-        memberCommandUseCase.update(request);
+    @PutMapping("/{memberId}")
+    public ResponseEntity<String> update(@PathVariable Long memberId, @RequestBody @Valid MemberRequest request) {
+        memberCommandUseCase.update(request, memberId);
         return ResponseEntity.ok("Updated");
     }
 
-    @DeleteMapping
-    public ResponseEntity<String> delete(@RequestBody @Valid MemberKeyRequest request) {
-        memberCommandUseCase.delete(request);
+    @DeleteMapping("/{memberId}")
+    public ResponseEntity<String> delete(@PathVariable Long memberId) {
+        memberCommandUseCase.delete(memberId);
         return ResponseEntity.ok("Deleted");
     }
 }

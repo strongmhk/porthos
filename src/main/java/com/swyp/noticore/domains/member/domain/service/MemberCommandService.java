@@ -1,24 +1,25 @@
 package com.swyp.noticore.domains.member.domain.service;
 
 import com.swyp.noticore.domains.auth.utils.PasswordEncoderUtil;
-import com.swyp.noticore.domains.member.application.dto.request.MemberKeyRequest;
+import com.swyp.noticore.domains.incident.persistence.entity.IncidentInfoEntity;
+import com.swyp.noticore.domains.incident.persistence.repository.IncidentInfoRepository;
 import com.swyp.noticore.domains.member.application.dto.request.MemberRequest;
 import com.swyp.noticore.domains.member.application.dto.response.MemberInfo;
+import com.swyp.noticore.domains.member.persistence.entity.GroupInfoEntity;
 import com.swyp.noticore.domains.member.persistence.entity.MemberEntity;
 import com.swyp.noticore.domains.member.persistence.entity.MemberGroupEntity;
 import com.swyp.noticore.domains.member.persistence.entity.MemberMetadataEntity;
+import com.swyp.noticore.domains.member.persistence.repository.GroupInfoRepository;
 import com.swyp.noticore.domains.member.persistence.repository.MemberGroupRepository;
 import com.swyp.noticore.domains.member.persistence.repository.MemberMetadataRepository;
 import com.swyp.noticore.domains.member.persistence.repository.MemberRepository;
-import com.swyp.noticore.domains.member.persistence.entity.GroupInfoEntity;
-import com.swyp.noticore.domains.member.persistence.repository.GroupInfoRepository;
-import com.swyp.noticore.domains.incident.persistence.repository.IncidentInfoRepository;
-import com.swyp.noticore.domains.incident.persistence.entity.IncidentInfoEntity;
+import com.swyp.noticore.global.exception.ApplicationException;
+import com.swyp.noticore.global.response.code.CommonErrorCode;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -78,10 +79,9 @@ public class MemberCommandService {
         memberGroupRepository.save(mapping);
     }
 
-    public MemberInfo findMember(MemberKeyRequest request) {
-        MemberEntity member = memberRepository.findByGroupNameAndNameAndEmail(
-                request.groupName(), request.name(), request.email())
-            .orElseThrow(() -> new IllegalArgumentException("멤버를 찾을 수 없습니다."));
+    public MemberInfo findMember(Long memberId) {
+        MemberEntity member = memberRepository.findById(memberId)
+            .orElseThrow(() -> ApplicationException.from(CommonErrorCode.NOT_FOUND));
 
         MemberMetadataEntity meta = member.getMemberMetadata();
 
@@ -97,10 +97,9 @@ public class MemberCommandService {
         );
     }
 
-    public void updateMember(MemberRequest request) {
-        MemberEntity member = memberRepository.findByGroupNameAndNameAndEmail(
-                request.groupName(), request.name(), request.email())
-            .orElseThrow(() -> new IllegalArgumentException("멤버를 찾을 수 없습니다."));
+    public void updateMember(MemberRequest request, Long memberId) {
+        MemberEntity member = memberRepository.findById(memberId)
+            .orElseThrow(() -> ApplicationException.from(CommonErrorCode.NOT_FOUND));
 
         MemberMetadataEntity meta = member.getMemberMetadata();
 
@@ -119,10 +118,9 @@ public class MemberCommandService {
         if (request.slackUrl() != null) meta.setSlackUrl(request.slackUrl());
     }
 
-    public void deleteMember(MemberKeyRequest request) {
-        MemberEntity member = memberRepository.findByGroupNameAndNameAndEmail(
-            request.groupName(), request.name(), request.email()
-        ).orElseThrow(() -> new IllegalArgumentException("멤버를 찾을 수 없습니다."));
+    public void deleteMember(Long memberId) {
+        MemberEntity member = memberRepository.findById(memberId)
+            .orElseThrow(() -> ApplicationException.from(CommonErrorCode.NOT_FOUND));
 
         List<GroupInfoEntity> groups = member.getMemberGroups().stream()
             .map(MemberGroupEntity::getGroupInfo)
