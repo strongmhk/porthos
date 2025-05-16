@@ -6,7 +6,8 @@ import lombok.Builder;
 @Builder
 public record GenerateTokenRequest(
     Long memberId,
-    Role role
+    Role role,
+    String name
 ) {
 
 }

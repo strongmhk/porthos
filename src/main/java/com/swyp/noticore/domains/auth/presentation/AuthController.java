@@ -5,7 +5,10 @@ import static com.swyp.noticore.domains.auth.domain.constants.AuthConstants.REFR
 
 import com.swyp.noticore.domains.auth.application.dto.MemberContext;
 import com.swyp.noticore.domains.auth.application.dto.request.LoginRequest;
+import com.swyp.noticore.domains.auth.application.dto.response.LoginInfoResponse;
+import com.swyp.noticore.domains.auth.application.dto.response.LoginResponse;
 import com.swyp.noticore.domains.auth.application.dto.response.TokenResponse;
+import com.swyp.noticore.domains.auth.application.mapper.AuthMapper;
 import com.swyp.noticore.domains.auth.application.usecase.AuthUseCase;
 import com.swyp.noticore.global.constants.SameSitePolicy;
 import com.swyp.noticore.global.utils.CookieUtils;
@@ -38,16 +41,18 @@ public class AuthController {
     private int accessExpiration;
 
     @PostMapping("/login")
-    public ResponseEntity login(@RequestBody LoginRequest request, HttpServletResponse response) {
-        TokenResponse tokenResponse = authUseCase.login(request, response);
+    public ResponseEntity<LoginInfoResponse> login(@RequestBody LoginRequest request, HttpServletResponse response) {
+        LoginResponse loginResponse = authUseCase.login(request, response);
 
-        ResponseCookie accessTokenCookie = CookieUtils.createCookie(ACCESS_COOKIE_KEY, tokenResponse.accessToken(), accessExpiration, true, true, SameSitePolicy.NONE);
-        ResponseCookie refreshTokenCookie = CookieUtils.createCookie(REFRESH_COOKIE_KEY, tokenResponse.refreshToken(), refreshExpiration, true, true, SameSitePolicy.NONE);
+        ResponseCookie accessTokenCookie = CookieUtils.createCookie(ACCESS_COOKIE_KEY, loginResponse.accessToken(), accessExpiration, true, true, SameSitePolicy.NONE);
+        ResponseCookie refreshTokenCookie = CookieUtils.createCookie(REFRESH_COOKIE_KEY, loginResponse.refreshToken(), refreshExpiration, true, true, SameSitePolicy.NONE);
 
         response.addHeader("Set-Cookie", accessTokenCookie.toString());
         response.addHeader("Set-Cookie", refreshTokenCookie.toString());
 
-        return new ResponseEntity(HttpStatus.OK);
+        return ResponseEntity.ok(
+            AuthMapper.mapToLoginInfoResponse(loginResponse.name())
+        );
     }
 
     @PostMapping("/refresh")
