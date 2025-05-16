@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -40,11 +41,11 @@ public class AuthController {
     public ResponseEntity login(@RequestBody LoginRequest request, HttpServletResponse response) {
         TokenResponse tokenResponse = authUseCase.login(request, response);
 
-        String accessTokenCookie = CookieUtils.addCookie(ACCESS_COOKIE_KEY, tokenResponse.accessToken(), accessExpiration, true, true, SameSitePolicy.NONE);
-        String refreshTokenCookie = CookieUtils.addCookie(REFRESH_COOKIE_KEY, tokenResponse.refreshToken(), refreshExpiration, true, true, SameSitePolicy.NONE);
+        ResponseCookie accessTokenCookie = CookieUtils.createCookie(ACCESS_COOKIE_KEY, tokenResponse.accessToken(), accessExpiration, true, true, SameSitePolicy.NONE);
+        ResponseCookie refreshTokenCookie = CookieUtils.createCookie(REFRESH_COOKIE_KEY, tokenResponse.refreshToken(), refreshExpiration, true, true, SameSitePolicy.NONE);
 
-        response.addHeader("Set-Cookie", accessTokenCookie);
-        response.addHeader("Set-Cookie", refreshTokenCookie);
+        response.addHeader("Set-Cookie", accessTokenCookie.toString());
+        response.addHeader("Set-Cookie", refreshTokenCookie.toString());
 
         return new ResponseEntity(HttpStatus.OK);
     }
@@ -55,11 +56,11 @@ public class AuthController {
 
         TokenResponse tokenResponse = authUseCase.refresh(memberContext, request, response);
 
-        String accessTokenCookie = CookieUtils.addCookie(ACCESS_COOKIE_KEY, tokenResponse.accessToken(), accessExpiration, true, true, SameSitePolicy.NONE);
-        String refreshTokenCookie = CookieUtils.addCookie(REFRESH_COOKIE_KEY, tokenResponse.refreshToken(), refreshExpiration, true, true, SameSitePolicy.NONE);
+        ResponseCookie accessTokenCookie = CookieUtils.createCookie(ACCESS_COOKIE_KEY, tokenResponse.accessToken(), accessExpiration, true, true, SameSitePolicy.NONE);
+        ResponseCookie refreshTokenCookie = CookieUtils.createCookie(REFRESH_COOKIE_KEY, tokenResponse.refreshToken(), refreshExpiration, true, true, SameSitePolicy.NONE);
 
-        response.addHeader("Set-Cookie", accessTokenCookie);
-        response.addHeader("Set-Cookie", refreshTokenCookie);
+        response.addHeader("Set-Cookie", accessTokenCookie.toString());
+        response.addHeader("Set-Cookie", refreshTokenCookie.toString());
 
         return new ResponseEntity(HttpStatus.OK);
     }

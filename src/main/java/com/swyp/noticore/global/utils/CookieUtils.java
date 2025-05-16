@@ -6,12 +6,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import java.util.Optional;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
 @Component
 public class CookieUtils {
 
-    public static String addCookie(
+    public static ResponseCookie createCookie(
         String name,
         String value,
         int maxAgeSeconds,
@@ -19,23 +20,17 @@ public class CookieUtils {
         boolean secure,
         SameSitePolicy sameSitePolicy
     ) {
-        StringBuilder cookieBuilder = new StringBuilder();
-        cookieBuilder.append(name).append("=").append(value)
-            .append("; Max-Age=").append(maxAgeSeconds)
-            .append("; Path=/");
-
-        if (secure) {
-            cookieBuilder.append("; Secure");
-        }
-        if (httpOnly) {
-            cookieBuilder.append("; HttpOnly");
-        }
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(name, value)
+            .maxAge(maxAgeSeconds)
+            .path("/")
+            .httpOnly(httpOnly)
+            .secure(secure);
 
         if (sameSitePolicy != null) {
-            cookieBuilder.append("; SameSite=").append(sameSitePolicy.getValue());
+            builder.sameSite(sameSitePolicy.getValue());
         }
 
-        return cookieBuilder.toString();
+        return builder.build();
     }
 
     public static void deleteCookie(HttpServletResponse response, String key) {
