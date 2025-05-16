@@ -116,10 +116,10 @@ public class IncidentInfoUseCase {
                     }
                 });
 
-        // 14. 장애 확인 안 할 시 OnCall, SMS 반복 알림 (5분마다 총 세 번씩)
-        for (MemberInfo member : allMembers) {
-            resendNotificationService.resendNotification(incidentId, member, subject);
-        }
+        // // 14. 장애 확인 안 할 시 OnCall, SMS 반복 알림 (5분마다 총 세 번씩)
+        // for (MemberInfo member : allMembers) {
+        //     resendNotificationService.resendNotification(incidentId, member, subject);
+        // }
     }
 
     public List<IncidentInfoResponse> getIncidentInfosByCompletion(boolean completion) {
