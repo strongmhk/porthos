@@ -37,7 +37,7 @@ public class RequestMatcherHolder {
         // auth
         new RequestInfo(POST, "/api/auth/login", null),
         new RequestInfo(POST, "/api/auth/logout", null),
-        new RequestInfo(POST, "/api/auth/refresh", null),
+        new RequestInfo(POST, "/api/auth/refresh", USER),
 
         // swagger
         new RequestInfo(GET, "/api/test-token",null),
