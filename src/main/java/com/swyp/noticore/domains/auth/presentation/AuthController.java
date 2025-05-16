@@ -5,7 +5,10 @@ import static com.swyp.noticore.domains.auth.domain.constants.AuthConstants.REFR
 
 import com.swyp.noticore.domains.auth.application.dto.MemberContext;
 import com.swyp.noticore.domains.auth.application.dto.request.LoginRequest;
+import com.swyp.noticore.domains.auth.application.dto.response.LoginInfoResponse;
+import com.swyp.noticore.domains.auth.application.dto.response.LoginResponse;
 import com.swyp.noticore.domains.auth.application.dto.response.TokenResponse;
+import com.swyp.noticore.domains.auth.application.mapper.AuthMapper;
 import com.swyp.noticore.domains.auth.application.usecase.AuthUseCase;
 import com.swyp.noticore.global.constants.SameSitePolicy;
 import com.swyp.noticore.global.utils.CookieUtils;
@@ -15,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,16 +41,18 @@ public class AuthController {
     private int accessExpiration;
 
     @PostMapping("/login")
-    public ResponseEntity login(@RequestBody LoginRequest request, HttpServletResponse response) {
-        TokenResponse tokenResponse = authUseCase.login(request, response);
+    public ResponseEntity<LoginInfoResponse> login(@RequestBody LoginRequest request, HttpServletResponse response) {
+        LoginResponse loginResponse = authUseCase.login(request, response);
 
-        String accessTokenCookie = CookieUtils.addCookie(ACCESS_COOKIE_KEY, tokenResponse.accessToken(), accessExpiration, true, true, SameSitePolicy.NONE);
-        String refreshTokenCookie = CookieUtils.addCookie(REFRESH_COOKIE_KEY, tokenResponse.refreshToken(), refreshExpiration, true, true, SameSitePolicy.NONE);
+        ResponseCookie accessTokenCookie = CookieUtils.createCookie(ACCESS_COOKIE_KEY, loginResponse.accessToken(), accessExpiration, true, true, SameSitePolicy.NONE);
+        ResponseCookie refreshTokenCookie = CookieUtils.createCookie(REFRESH_COOKIE_KEY, loginResponse.refreshToken(), refreshExpiration, true, true, SameSitePolicy.NONE);
 
-        response.addHeader("Set-Cookie", accessTokenCookie);
-        response.addHeader("Set-Cookie", refreshTokenCookie);
+        response.addHeader("Set-Cookie", accessTokenCookie.toString());
+        response.addHeader("Set-Cookie", refreshTokenCookie.toString());
 
-        return new ResponseEntity(HttpStatus.OK);
+        return ResponseEntity.ok(
+            AuthMapper.mapToLoginInfoResponse(loginResponse.name())
+        );
     }
 
     @PostMapping("/refresh")
@@ -55,11 +61,11 @@ public class AuthController {
 
         TokenResponse tokenResponse = authUseCase.refresh(memberContext, request, response);
 
-        String accessTokenCookie = CookieUtils.addCookie(ACCESS_COOKIE_KEY, tokenResponse.accessToken(), accessExpiration, true, true, SameSitePolicy.NONE);
-        String refreshTokenCookie = CookieUtils.addCookie(REFRESH_COOKIE_KEY, tokenResponse.refreshToken(), refreshExpiration, true, true, SameSitePolicy.NONE);
+        ResponseCookie accessTokenCookie = CookieUtils.createCookie(ACCESS_COOKIE_KEY, tokenResponse.accessToken(), accessExpiration, true, true, SameSitePolicy.NONE);
+        ResponseCookie refreshTokenCookie = CookieUtils.createCookie(REFRESH_COOKIE_KEY, tokenResponse.refreshToken(), refreshExpiration, true, true, SameSitePolicy.NONE);
 
-        response.addHeader("Set-Cookie", accessTokenCookie);
-        response.addHeader("Set-Cookie", refreshTokenCookie);
+        response.addHeader("Set-Cookie", accessTokenCookie.toString());
+        response.addHeader("Set-Cookie", refreshTokenCookie.toString());
 
         return new ResponseEntity(HttpStatus.OK);
     }

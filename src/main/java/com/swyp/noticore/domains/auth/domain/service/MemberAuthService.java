@@ -31,7 +31,8 @@ public class MemberAuthService {
 
         return AuthMapper.mapToGenerateTokenRequest(
             memberEntity.getRole(),
-            memberEntity.getId()
+            memberEntity.getId(),
+            memberEntity.getName()
         );
     }
 
