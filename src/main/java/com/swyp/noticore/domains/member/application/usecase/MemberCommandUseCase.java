@@ -1,7 +1,6 @@
 package com.swyp.noticore.domains.member.application.usecase;
 
 import com.swyp.noticore.domains.member.application.dto.request.MemberRequest;
-import com.swyp.noticore.domains.member.application.dto.request.MemberKeyRequest;
 import com.swyp.noticore.domains.member.application.dto.response.MemberInfo;
 import com.swyp.noticore.domains.member.domain.service.MemberCommandService;
 import lombok.RequiredArgsConstructor;
@@ -21,15 +20,15 @@ public class MemberCommandUseCase {
         memberCommandService.insert(request);
     }
 
-    public MemberInfo get(MemberKeyRequest request) {
-        return memberCommandService.findMember(request);
+    public MemberInfo get(Long memberId) {
+        return memberCommandService.findMember(memberId);
     }
 
-    public void update(MemberRequest request) {
-        memberCommandService.updateMember(request);
+    public void update(MemberRequest request, Long memberId) {
+        memberCommandService.updateMember(request, memberId);
     }
 
-    public void delete(MemberKeyRequest request) {
-        memberCommandService.deleteMember(request);
+    public void delete(Long memberId) {
+        memberCommandService.deleteMember(memberId);
     }
 }
