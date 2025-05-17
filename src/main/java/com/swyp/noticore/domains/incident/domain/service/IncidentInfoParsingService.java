@@ -13,6 +13,10 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.Session;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.Multipart;
+import jakarta.mail.BodyPart;
+import jakarta.mail.Part;
+import org.jsoup.Jsoup;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,6 +33,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ses.SesClient;
 import software.amazon.awssdk.services.ses.model.RawMessage;
 import software.amazon.awssdk.services.ses.model.SendRawEmailRequest;
+
 
 @Slf4j
 @Transactional
@@ -71,10 +76,20 @@ public class IncidentInfoParsingService {
                 log.warn("No valid groups found. Extracted groups: {}, Subject: {}", groupNames, subject);
                 throw ApplicationException.from(BAD_REQUEST);
             }
+            
+            // 본문 추출
+            String rawBody;
+            try {
+                rawBody = extractRawText(originalMessage);
+            } catch (Exception e) {
+                log.warn("본문 추출 실패. 빈 문자열로 대체", e);
+                rawBody = "";
+            }
 
             return MailContent.builder()
                     .originalMessage(originalMessage)
                     .subject(subject)
+                    .rawBody(rawBody)
                     .build();
 
         } catch (MessagingException e) {
@@ -129,4 +144,66 @@ public class IncidentInfoParsingService {
         }
     }
 
+    private String extractRawText(MimeMessage message) throws Exception {
+        String contentType = message.getContentType();
+        log.info("[extractRawText] MIME Type: {}", contentType);
+
+        Object content = message.getContent();
+        return extractRecursive(content);
+    }
+
+    private String extractRecursive(Object part) throws Exception {
+        if (part instanceof String content) {
+            log.info("[extractRecursive] Found text content:\n{}", content);
+            return content.strip();
+        }
+
+        if (part instanceof Multipart multipart) {
+            log.info("[extractRecursive] Multipart found: {} parts", multipart.getCount());
+
+            for (int i = 0; i < multipart.getCount(); i++) {
+                BodyPart bodyPart = multipart.getBodyPart(i);
+                String contentType = bodyPart.getContentType();
+                String disposition = bodyPart.getDisposition();
+
+                log.info("[extractRecursive] Processing part #{}: type={}, disposition={}", i, contentType, disposition);
+
+                if (disposition != null && disposition.equalsIgnoreCase(Part.ATTACHMENT)) {
+                    log.info("[extractRecursive] Skipped attachment part");
+                    continue;
+                }
+
+                if (bodyPart.isMimeType("image/*")) {
+                    log.info("[extractRecursive] Skipped image part");
+                    continue;
+                }
+
+                Object content = bodyPart.getContent();
+
+                if (bodyPart.isMimeType("text/plain")) {
+                    log.info("[extractRecursive] Found text/plain content");
+                    return ((String) content).strip();
+                }
+
+                if (bodyPart.isMimeType("text/html")) {
+                    log.info("[extractRecursive] Found text/html content");
+                    String html = (String) content;
+                    return Jsoup.parse(html).text().strip();
+                }
+
+                if (bodyPart.isMimeType("multipart/*")) {
+                    log.info("[extractRecursive] Nested multipart found");
+                    String nested = extractRecursive(content);
+                    if (!nested.isEmpty()) return nested;
+                }
+            }
+        }
+
+        log.warn("[extractRecursive] No suitable content found in part: {}", part.getClass().getName());
+        return "";
+    }
+
+    private String preview(String content) {
+        return content.length() > 500 ? content.substring(0, 500) + "..." : content;
+    }
 }

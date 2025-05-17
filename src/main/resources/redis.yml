@@ -12,7 +12,7 @@ spring:
           verify-peer: false
 
 
-#spring:
+# spring:
 #  data:
 #    redis:
 #      host: localhost

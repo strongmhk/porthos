@@ -6,7 +6,8 @@ import lombok.Builder;
 @Builder
 public record MailContent(
     MimeMessage originalMessage,
-    String subject
+    String subject,
+    String rawBody
 ) {
 
 }

@@ -27,14 +27,16 @@ public class IncidentCommandService {
     /**
      * 장애 및 관련 그룹 저장
      *
+     * @param rawBody     email 본문
      * @param s3Key       S3 UUID (eml 파일 키)
      * @param groupNames  유효 그룹명 리스트
      * @return 저장된 incident_id
      */
-    public Long saveIncidentAndGroups(String title, String s3Key, List<String> groupNames) {
+    public Long saveIncidentAndGroups(String rawBody, String title, String s3Key, List<String> groupNames) {
         // 1. Incident 저장
         IncidentInfoEntity incident = IncidentInfoEntity.builder()
                 .title(title)
+                .rawBody(rawBody)
                 .s3Uuid(s3Key)
                 .completion(false)
                 .registrationTime(LocalDateTime.now())

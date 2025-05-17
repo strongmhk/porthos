@@ -51,6 +51,7 @@ public class IncidentInfoUseCase {
         // 2. 제목 형식 검증 및 유효 그룹 검사 (내부에서 메일 반송 처리)
         MailContent mailContent = incidentInfoParsingService.parseAndValidate(inputStream);
         String subject = mailContent.subject();
+        String rawBody = mailContent.rawBody();
 
         // 3. 제목에서 그룹명 파싱
         String groupSection = subject.replaceAll("(?i).*\\[emergency:([^\\]]+)\\].*", "$1").toLowerCase();
@@ -76,7 +77,7 @@ public class IncidentInfoUseCase {
 
         // 6. incident_info + incident_group 저장 → incidentId 확보
         String title = subject.replaceAll("(?i).*\\[emergency:[^\\]]+\\]\\s*", "");
-        Long incidentId = incidentCommandService.saveIncidentAndGroups(title, s3Key, existingGroups);
+        Long incidentId = incidentCommandService.saveIncidentAndGroups(rawBody, title, s3Key, existingGroups);
 
         // 7. 자동 안내 메시지 생성
         String noticeMessage = EmailNoticeFormatter.formatNotice(memberInfoByGroup, notFoundGroups, incidentId);

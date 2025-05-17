@@ -9,6 +9,7 @@ public record IncidentDetailResponse(
     Long incidentId,
     String bucket,
     String s3Uuid,
+    String rawBody,
     String title,
     LocalDateTime registrationTime,
     LocalDateTime closingTime,

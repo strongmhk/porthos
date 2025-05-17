@@ -73,19 +73,20 @@ public class IncidentInfoMapper {
         Tuple first = tuples.get(0);
         Long incidentId = first.get(0, Long.class);
         String s3Uuid = first.get(1, String.class);
-        String title = first.get(2, String.class);
-        LocalDateTime registrationTime = first.get(3, LocalDateTime.class);
-        LocalDateTime closingTime = first.get(4, LocalDateTime.class);
+        String rawBody = first.get(2, String.class);
+        String title = first.get(3, String.class);
+        LocalDateTime registrationTime = first.get(4, LocalDateTime.class);
+        LocalDateTime closingTime = first.get(5, LocalDateTime.class);
         String bucket = S3Constants.EML_BUCKET;
 
         Map<Long, IncidentGroupResponse> groupMap = new LinkedHashMap<>();
 
         for (Tuple tuple : tuples) {
-            Long groupId = tuple.get(5, Long.class);
-            String groupName = tuple.get(6, String.class);
-            Long memberId = tuple.get(7, Long.class);
-            String memberName = tuple.get(8, String.class);
-            Boolean isVerified = Boolean.TRUE.equals(tuple.get(9, Boolean.class));
+            Long groupId = tuple.get(6, Long.class);
+            String groupName = tuple.get(7, String.class);
+            Long memberId = tuple.get(8, Long.class);
+            String memberName = tuple.get(9, String.class);
+            Boolean isVerified = Boolean.TRUE.equals(tuple.get(10, Boolean.class));
 
             groupMap
                 .computeIfAbsent(groupId, id -> IncidentGroupResponse.builder()
@@ -102,6 +103,7 @@ public class IncidentInfoMapper {
             .builder()
             .incidentId(incidentId)
             .s3Uuid(s3Uuid)
+            .rawBody(rawBody)
             .title(title)
             .registrationTime(registrationTime)
             .closingTime(closingTime)

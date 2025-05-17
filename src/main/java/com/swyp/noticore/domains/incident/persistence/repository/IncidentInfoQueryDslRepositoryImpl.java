@@ -76,14 +76,15 @@ public class IncidentInfoQueryDslRepositoryImpl implements IncidentInfoQueryDslR
             .select(
                 incident.id,                // 0
                 incident.s3Uuid,            // 1
-                incident.title,             // 2
-                incident.registrationTime,  // 3 
-                incident.closingTime,       // 4 
-                group.id,                   // 5
-                group.name,                 // 6
-                member.id,                  // 7
-                member.name,                // 8
-                log.isVerified              // 9
+                incident.rawBody,           // 2
+                incident.title,             // 3
+                incident.registrationTime,  // 4 
+                incident.closingTime,       // 5 
+                group.id,                   // 6
+                group.name,                 // 7
+                member.id,                  // 8
+                member.name,                // 9
+                log.isVerified              // 10
             )
             .from(incident)
             .join(incident.groups, incidentGroup)
