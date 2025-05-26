@@ -1,5 +1,6 @@
 package com.swyp.noticore.domains.member.persistence.entity;
 
+import com.swyp.noticore.domains.comment.persistence.entity.CommentEntity;
 import com.swyp.noticore.domains.member.domain.constant.Role;
 import com.swyp.noticore.global.entity.BaseTimeEntity;
 import jakarta.persistence.Column;
@@ -59,6 +60,10 @@ public class MemberEntity extends BaseTimeEntity {
     @Builder.Default
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MemberGroupEntity> memberGroups = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CommentEntity> commentEntities = new ArrayList<>();
 
     public Long getId() {
         return id;
