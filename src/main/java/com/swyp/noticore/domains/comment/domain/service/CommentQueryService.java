@@ -35,12 +35,6 @@ public class CommentQueryService {
         return commentResponses;
     }
 
-    public CommentResponse readCommentByMember(Long incidentId, Long memberId) {
-        CommentEntity comment = commentQueryDslRepository.findByIncidentInfoEntityIdAndMemberId(incidentId, memberId).orElseThrow(() ->
-                new ApplicationException(CommentErrorCode.COMMENT_NOT_FOUND));
-
-        return CommentResponse.from(comment);
-    }
 
     public List<CommentResponse> readCommentsByMember(Long incidentId, Long memberId) {
         List<CommentEntity> comments = commentQueryDslRepository.findAllByIncidentInfoEntityIdAndMemberId(incidentId, memberId);

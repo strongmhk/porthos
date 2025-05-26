@@ -31,10 +31,6 @@ public class CommentUseCase {
         return commentQueryService.readComments(incidentId);
     }
 
-    public CommentResponse readCommentByMember(Long incidentId, Long memberId) {
-        return commentQueryService.readCommentByMember(incidentId, memberId);
-    }
-
     public List<CommentResponse> readCommentsByMember(Long incidentId, Long memberId) {
         return commentQueryService.readCommentsByMember(incidentId, memberId);
     }
