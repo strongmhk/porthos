@@ -18,13 +18,6 @@ public class CommentQueryService {
 
     private final CommentQueryDslRepository commentQueryDslRepository;
 
-    public CommentResponse readComment(Long incidentId, Long commentId) {
-        CommentEntity comment = commentQueryDslRepository.findByIncidentInfoEntityIdAndId(incidentId, commentId).orElseThrow(() ->
-                new ApplicationException(CommentErrorCode.COMMENT_NOT_FOUND));
-
-        return CommentResponse.from(comment);
-    }
-
     public List<CommentResponse> readComments(Long incidentId) {
         List<CommentEntity> comments = commentQueryDslRepository.findByIncidentInfoEntityId(incidentId);
         if (comments.isEmpty()) {
@@ -34,7 +27,6 @@ public class CommentQueryService {
         List<CommentResponse> commentResponses = comments.stream().map(CommentResponse::from).toList();
         return commentResponses;
     }
-
 
     public List<CommentResponse> readCommentsByMember(Long incidentId, Long memberId) {
         List<CommentEntity> comments = commentQueryDslRepository.findAllByIncidentInfoEntityIdAndMemberId(incidentId, memberId);

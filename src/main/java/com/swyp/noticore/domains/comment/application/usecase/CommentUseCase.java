@@ -23,10 +23,6 @@ public class CommentUseCase {
         commentCommandService.createComment(commentCreateRequest, incidentId, memberId);
     }
 
-    public CommentResponse readComment(Long incidentId, Long commentId) {
-        return commentQueryService.readComment(incidentId, commentId);
-    }
-
     public List<CommentResponse> readComments(Long incidentId) {
         return commentQueryService.readComments(incidentId);
     }

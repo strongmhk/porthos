@@ -27,12 +27,6 @@ public class CommentController {
         return ResponseEntity.ok("Comment created");
     }
 
-    @GetMapping("/{commentId}")
-    public ResponseEntity<CommentResponse> readComment (@PathVariable Long incidentId, @PathVariable Long commentId) {
-        CommentResponse commentResponse = commentUseCase.readComment(incidentId, commentId);
-        return ResponseEntity.ok(commentResponse);
-    }
-
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> readComments (@PathVariable Long incidentId) {
         List<CommentResponse> commentResponses = commentUseCase.readComments(incidentId);
