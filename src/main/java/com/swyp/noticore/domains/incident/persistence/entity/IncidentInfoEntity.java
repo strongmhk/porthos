@@ -1,5 +1,6 @@
 package com.swyp.noticore.domains.incident.persistence.entity;
 
+import com.swyp.noticore.domains.comment.persistence.entity.CommentEntity;
 import com.swyp.noticore.global.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -40,4 +41,8 @@ public class IncidentInfoEntity extends BaseTimeEntity {
     @Builder.Default
     @OneToMany(mappedBy = "incident", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<IncidentGroupEntity> groups = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CommentEntity> commentEntities = new ArrayList<>();
 }
