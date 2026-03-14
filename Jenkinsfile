@@ -81,6 +81,14 @@ pipeline {
             }
             steps {
                 sh './gradlew clean build -x test --no-daemon'
+                // Make artifact availability explicit and resilient across nodes/workspaces.
+                sh '''
+                    echo "Build outputs:"
+                    ls -la build || true
+                    ls -la build/libs || true
+                    test -f "build/libs/${JAR_NAME}"
+                '''
+                stash name: 'qa-artifacts', includes: "build/libs/${JAR_NAME},Dockerfile"
             }
         }
 
@@ -119,12 +127,18 @@ pipeline {
                 }
             }
             steps {
+                // Ensure artifacts exist even if this stage runs on a different workspace/node.
+                unstash 'qa-artifacts'
                 withCredentials([
                     string(credentialsId: 'qa-server-host', variable: 'QA_HOST'),
                     string(credentialsId: 'QA_WAS_SSH_PORT', variable: 'QA_SSH_PORT'),
                     sshUserPrivateKey(credentialsId: 'qa-ssh-key', keyFileVariable: 'SSH_KEY')
                 ]) {
                     sh """
+                        echo "Artifact check"
+                        ls -la build/libs || true
+                        ls -la Dockerfile || true
+
                         echo "[1/3] JAR + Dockerfile 전송"
                         scp -P \${QA_SSH_PORT} -i \${SSH_KEY} -o StrictHostKeyChecking=no \\
                             build/libs/${JAR_NAME} \\
