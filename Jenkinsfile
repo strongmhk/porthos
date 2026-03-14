@@ -28,7 +28,8 @@ pipeline {
 
     environment {
         APP_NAME    = 'noticore'
-        JAR_NAME    = 'porthos-0.0.1-SNAPSHOT.jar'
+        // Fallback only; the Build stage auto-detects the real jar name from build/libs.
+        JAR_NAME    = 'noticore-0.0.1-SNAPSHOT.jar'
         QA_USER     = 'ubuntu'
         DEPLOY_PATH = '/home/ubuntu/porthos'
         SERVICE     = 'noticore-qa'
@@ -82,13 +83,34 @@ pipeline {
             steps {
                 sh './gradlew clean build -x test --no-daemon'
                 // Make artifact availability explicit and resilient across nodes/workspaces.
-                sh '''
-                    echo "Build outputs:"
-                    ls -la build || true
-                    ls -la build/libs || true
-                    test -f "build/libs/${JAR_NAME}"
-                '''
-                stash name: 'qa-artifacts', includes: "build/libs/${JAR_NAME},Dockerfile"
+                script {
+                    sh '''
+                        echo "Build outputs:"
+                        ls -la build || true
+                        ls -la build/libs || true
+                    '''
+
+                    // Prefer the non-plain jar (Spring Boot executable) and fall back gracefully.
+                    def detectedJar = sh(
+                        script: "ls -1 build/libs/*.jar 2>/dev/null | grep -v -E '(-plain\\.jar$|plain\\.jar$)' | head -n 1 || true",
+                        returnStdout: true
+                    ).trim()
+                    if (!detectedJar) {
+                        detectedJar = sh(
+                            script: "ls -1 build/libs/*.jar 2>/dev/null | head -n 1 || true",
+                            returnStdout: true
+                        ).trim()
+                    }
+                    if (!detectedJar) {
+                        error("No jar produced under build/libs/*.jar")
+                    }
+
+                    env.JAR_NAME = detectedJar.tokenize('/').last()
+                    echo "Detected jar: ${env.JAR_NAME}"
+                    sh "test -f build/libs/${env.JAR_NAME}"
+                }
+
+                stash name: 'qa-artifacts', includes: "build/libs/${env.JAR_NAME},Dockerfile"
             }
         }
 
