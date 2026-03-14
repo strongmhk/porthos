@@ -92,7 +92,7 @@ pipeline {
 
                     // Prefer the non-plain jar (Spring Boot executable) and fall back gracefully.
                     def detectedJar = sh(
-                        script: "ls -1 build/libs/*.jar 2>/dev/null | grep -v -E '(-plain\\.jar$|plain\\.jar$)' | head -n 1 || true",
+                        script: 'ls -1 build/libs/*.jar 2>/dev/null | grep -v -E \'(-plain\\.jar$|plain\\.jar$)\' | head -n 1 || true',
                         returnStdout: true
                     ).trim()
                     if (!detectedJar) {
