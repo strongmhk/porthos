@@ -58,7 +58,7 @@ pipeline {
                 docker {
                     image 'eclipse-temurin:17-jdk-jammy'
                     reuseNode true
-                    args '--network host -v gradle-cache:/root/.gradle'
+                    args "--entrypoint='' --network host -v gradle-cache:/root/.gradle"
                 }
             }
             steps {
@@ -74,7 +74,7 @@ pipeline {
                 docker {
                     image 'eclipse-temurin:17-jdk-jammy'
                     reuseNode true
-                    args '--network host -v gradle-cache:/root/.gradle'
+                    args "--entrypoint='' --network host -v gradle-cache:/root/.gradle"
                 }
             }
             steps {
