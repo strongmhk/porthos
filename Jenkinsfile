@@ -44,7 +44,10 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
-                echo "Branch: ${env.BRANCH_NAME} | Build: #${env.BUILD_NUMBER}"
+                script {
+                    env.GIT_BRANCH = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
+                }
+                echo "Branch: ${env.GIT_BRANCH} | Build: #${env.BUILD_NUMBER}"
             }
         }
 
@@ -94,7 +97,6 @@ pipeline {
         //    Jenkins 에이전트 워크스페이스에 그대로 남아있음
         // ----------------------------------------------------------
         stage('Deploy to QA') {
-            when { branch 'develop' }
             steps {
                 withCredentials([
                     string(credentialsId: 'qa-server-host', variable: 'QA_HOST'),
@@ -144,7 +146,6 @@ pipeline {
         //    /actuator/health 응답에 "UP" 포함 여부로 판단
         // ----------------------------------------------------------
         stage('Health Check') {
-            when { branch 'develop' }
             steps {
                 withCredentials([
                     string(credentialsId: 'qa-server-host', variable: 'QA_HOST'),
@@ -169,12 +170,12 @@ pipeline {
     post {
         success {
             script {
-                if (env.BRANCH_NAME == 'develop') {
+                if (env.GIT_BRANCH == 'develop') {
                     slackSend(
                         channel: '#deploy-log',
                         color: 'good',
                         message: "✅ *${APP_NAME}* QA 배포 성공\n" +
-                                 "Branch: `${env.BRANCH_NAME}` | Build: `#${env.BUILD_NUMBER}`\n" +
+                                 "Branch: `${env.GIT_BRANCH}` | Build: `#${env.BUILD_NUMBER}`\n" +
                                  "${env.BUILD_URL}"
                     )
                 }
@@ -182,12 +183,12 @@ pipeline {
         }
         failure {
             script {
-                if (env.BRANCH_NAME == 'develop') {
+                if (env.GIT_BRANCH == 'develop') {
                     slackSend(
                         channel: '#deploy-log',
                         color: 'danger',
                         message: "❌ *${APP_NAME}* QA 배포 실패\n" +
-                                 "Branch: `${env.BRANCH_NAME}` | Build: `#${env.BUILD_NUMBER}`\n" +
+                                 "Branch: `${env.GIT_BRANCH}` | Build: `#${env.BUILD_NUMBER}`\n" +
                                  "${env.BUILD_URL}"
                     )
                 }
