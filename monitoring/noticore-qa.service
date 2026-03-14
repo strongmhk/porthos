@@ -1,0 +1,25 @@
+[Unit]
+Description=Noticore QA Application
+After=network.target
+
+[Service]
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/porthos
+
+# 앱 포트 8081, 관리 포트 8082
+ExecStart=/usr/bin/java \
+    -Xms256m -Xmx512m \
+    -Dspring.profiles.active=qa \
+    -jar /home/ubuntu/porthos/app.jar
+
+Restart=on-failure
+RestartSec=10
+
+# 로그는 journald 에 기록 → journalctl -u noticore-qa -f
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=noticore-qa
+
+[Install]
+WantedBy=multi-user.target

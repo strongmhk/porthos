@@ -1,0 +1,17 @@
+# ============================================================
+# 기존 Prometheus 서버의 prometheus.yml 에 아래 내용을 추가하세요.
+# QA 서버 IP를 실제 값으로 교체한 후 적용:
+#   sudo systemctl reload prometheus
+# ============================================================
+
+scrape_configs:
+  - job_name: 'noticore-qa'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    static_configs:
+      - targets: ['QA_SERVER_IP:8082']   # ← QA 서버 IP로 교체
+        labels:
+          env: 'qa'
+          app: 'noticore'
+          service: 'porthos'
