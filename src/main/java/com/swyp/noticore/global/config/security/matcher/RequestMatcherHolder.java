@@ -33,6 +33,7 @@ public class RequestMatcherHolder {
         // health check
         new RequestInfo(GET, "/api/test/**",null),
         new RequestInfo(POST, "/api/test/**",null),
+        new RequestInfo(GET, "/actuator/**", null),
 
         // auth
         new RequestInfo(POST, "/api/auth/login", null),
