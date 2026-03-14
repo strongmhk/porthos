@@ -189,7 +189,6 @@ pipeline {
                                -e SPRING_DATASOURCE_PASSWORD=porthos123! \\
                                -e SPRING_DATA_REDIS_HOST=localhost \\
                                -e SPRING_DATA_REDIS_PORT=16379 \\
-                               -e SPRING_DATA_REDIS_PASSWORD='noticore1!' \\
                                -e SPRING_DATA_REDIS_USERNAME='' \\
                                -e SPRING_DATA_REDIS_SSL_ENABLED=false \\
                                ${SERVICE}:latest"

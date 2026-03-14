@@ -11,6 +11,7 @@ import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.util.StringUtils;
 
 @Configuration
 @EnableRedisRepositories
@@ -28,18 +29,27 @@ public class RedisConfig {
     @Value("${spring.data.redis.username}")
     private String username;
 
+    @Value("${spring.data.redis.ssl.enabled:false}")
+    private boolean sslEnabled;
+
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
         RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration();
         redisStandaloneConfiguration.setHostName(host);
         redisStandaloneConfiguration.setPort(port);
-        redisStandaloneConfiguration.setUsername(username);
-        redisStandaloneConfiguration.setPassword(password);
+        if (StringUtils.hasText(username)) {
+            redisStandaloneConfiguration.setUsername(username);
+        }
+        if (StringUtils.hasText(password)) {
+            redisStandaloneConfiguration.setPassword(password);
+        }
 
-        LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
-            .useSsl()
-            .disablePeerVerification()
-            .build();
+        LettuceClientConfiguration.LettuceClientConfigurationBuilder clientConfigBuilder =
+            LettuceClientConfiguration.builder();
+        if (sslEnabled) {
+            clientConfigBuilder.useSsl().disablePeerVerification();
+        }
+        LettuceClientConfiguration clientConfig = clientConfigBuilder.build();
 
         return new LettuceConnectionFactory(redisStandaloneConfiguration, clientConfig);
 //        return new LettuceConnectionFactory(redisStandaloneConfiguration); // 로컬 or Dev Redis 커넥션
