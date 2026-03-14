@@ -1,21 +1,10 @@
 spring:
   data:
     redis:
-      host: porthos-redis-cache-wajm0p.serverless.apn2.cache.amazonaws.com
-      port: 6379
-      username: porthos
-      password: noticoreRedisSecure!123
+      # When running the app container, access host-published Redis via host gateway.
+      host: ${SPRING_DATA_REDIS_HOST:host.docker.internal}
+      port: ${SPRING_DATA_REDIS_PORT:16379}
+      password: ${SPRING_DATA_REDIS_PASSWORD:nuntteo_qa_user1!}
+      username: ${SPRING_DATA_REDIS_USERNAME:}
       ssl:
-        enable: true
-      lettuce:
-        ssl:
-          verify-peer: false
-
-
-# spring:
-#  data:
-#    redis:
-#      host: localhost
-#      # host: 43.203.222.129
-#      port: 6379
-#      password: noticore1!
+        enabled: ${SPRING_DATA_REDIS_SSL_ENABLED:false}

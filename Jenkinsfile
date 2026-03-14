@@ -20,6 +20,12 @@
 pipeline {
     agent any
 
+    triggers {
+        // If the job is configured for SCM polling, define it here as well so the behavior
+        // is consistent even when the UI trigger isn't set.
+        pollSCM('H/5 * * * *')
+    }
+
     environment {
         APP_NAME    = 'noticore'
         JAR_NAME    = 'porthos-0.0.1-SNAPSHOT.jar'
@@ -45,7 +51,16 @@ pipeline {
             steps {
                 checkout scm
                 script {
-                    env.GIT_BRANCH = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
+                    // Prefer Jenkins-provided branch vars (works in multibranch),
+                    // fall back to git only when needed.
+                    def branch = (env.BRANCH_NAME ?: env.GIT_BRANCH ?: '').trim()
+                    if (!branch || branch == 'HEAD') {
+                        branch = sh(
+                            script: "git name-rev --name-only --no-undefined HEAD 2>/dev/null | sed 's#^remotes/##'",
+                            returnStdout: true
+                        ).trim()
+                    }
+                    env.GIT_BRANCH = (branch ?: 'unknown').replaceFirst(/^origin\\//, '')
                 }
                 echo "Branch: ${env.GIT_BRANCH} | Build: #${env.BUILD_NUMBER}"
             }
@@ -97,27 +112,34 @@ pipeline {
         //    Jenkins 에이전트 워크스페이스에 그대로 남아있음
         // ----------------------------------------------------------
         stage('Deploy to QA') {
+            when {
+                expression {
+                    def b = (env.BRANCH_NAME ?: env.GIT_BRANCH ?: '').trim()
+                    return b == 'develop' || b == 'origin/develop' || b == 'refs/heads/develop'
+                }
+            }
             steps {
                 withCredentials([
                     string(credentialsId: 'qa-server-host', variable: 'QA_HOST'),
+                    string(credentialsId: 'QA_WAS_SSH_PORT', variable: 'QA_SSH_PORT'),
                     sshUserPrivateKey(credentialsId: 'qa-ssh-key', keyFileVariable: 'SSH_KEY')
                 ]) {
                     sh """
                         echo "[1/3] JAR + Dockerfile 전송"
-                        scp -i \${SSH_KEY} -o StrictHostKeyChecking=no \\
+                        scp -P \${QA_SSH_PORT} -i \${SSH_KEY} -o StrictHostKeyChecking=no \\
                             build/libs/${JAR_NAME} \\
                             ${QA_USER}@\${QA_HOST}:${DEPLOY_PATH}/app.jar
-                        scp -i \${SSH_KEY} -o StrictHostKeyChecking=no \\
+                        scp -P \${QA_SSH_PORT} -i \${SSH_KEY} -o StrictHostKeyChecking=no \\
                             Dockerfile \\
                             ${QA_USER}@\${QA_HOST}:${DEPLOY_PATH}/Dockerfile
 
                         echo "[2/3] Docker 이미지 빌드"
-                        ssh -i \${SSH_KEY} -o StrictHostKeyChecking=no \\
+                        ssh -p \${QA_SSH_PORT} -i \${SSH_KEY} -o StrictHostKeyChecking=no \\
                             ${QA_USER}@\${QA_HOST} \\
                             "docker build -t ${SERVICE}:latest ${DEPLOY_PATH}"
 
                         echo "[3/3] 컨테이너 재시작"
-                        ssh -i \${SSH_KEY} -o StrictHostKeyChecking=no \\
+                        ssh -p \${QA_SSH_PORT} -i \${SSH_KEY} -o StrictHostKeyChecking=no \\
                             ${QA_USER}@\${QA_HOST} \\
                             "docker stop ${SERVICE} 2>/dev/null || true && \\
                              docker rm ${SERVICE} 2>/dev/null || true && \\
@@ -146,15 +168,22 @@ pipeline {
         //    /actuator/health 응답에 "UP" 포함 여부로 판단
         // ----------------------------------------------------------
         stage('Health Check') {
+            when {
+                expression {
+                    def b = (env.BRANCH_NAME ?: env.GIT_BRANCH ?: '').trim()
+                    return b == 'develop' || b == 'origin/develop' || b == 'refs/heads/develop'
+                }
+            }
             steps {
                 withCredentials([
                     string(credentialsId: 'qa-server-host', variable: 'QA_HOST'),
+                    string(credentialsId: 'QA_WAS_SSH_PORT', variable: 'QA_SSH_PORT'),
                     sshUserPrivateKey(credentialsId: 'qa-ssh-key', keyFileVariable: 'SSH_KEY')
                 ]) {
                     retry(6) {
                         sleep time: 10, unit: 'SECONDS'
                         sh """
-                            ssh -i \${SSH_KEY} -o StrictHostKeyChecking=no \\
+                            ssh -p \${QA_SSH_PORT} -i \${SSH_KEY} -o StrictHostKeyChecking=no \\
                                 ${QA_USER}@\${QA_HOST} \\
                                 "curl -sf http://localhost:${MGMT_PORT}/actuator/health | grep -q UP"
                         """
@@ -174,6 +203,7 @@ pipeline {
                     slackSend(
                         channel: '#deploy-log',
                         color: 'good',
+                        tokenCredentialId: 'slack-token',
                         message: "✅ *${APP_NAME}* QA 배포 성공\n" +
                                  "Branch: `${env.GIT_BRANCH}` | Build: `#${env.BUILD_NUMBER}`\n" +
                                  "${env.BUILD_URL}"
@@ -187,6 +217,7 @@ pipeline {
                     slackSend(
                         channel: '#deploy-log',
                         color: 'danger',
+                        tokenCredentialId: 'slack-token',
                         message: "❌ *${APP_NAME}* QA 배포 실패\n" +
                                  "Branch: `${env.GIT_BRANCH}` | Build: `#${env.BUILD_NUMBER}`\n" +
                                  "${env.BUILD_URL}"
