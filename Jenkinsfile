@@ -101,15 +101,38 @@ pipeline {
                     sshUserPrivateKey(credentialsId: 'qa-ssh-key', keyFileVariable: 'SSH_KEY')
                 ]) {
                     sh """
-                        echo "[1/2] JAR 전송 → \${QA_HOST}:${DEPLOY_PATH}/app.jar"
+                        echo "[1/3] JAR + Dockerfile 전송"
                         scp -i \${SSH_KEY} -o StrictHostKeyChecking=no \\
                             build/libs/${JAR_NAME} \\
                             ${QA_USER}@\${QA_HOST}:${DEPLOY_PATH}/app.jar
+                        scp -i \${SSH_KEY} -o StrictHostKeyChecking=no \\
+                            Dockerfile \\
+                            ${QA_USER}@\${QA_HOST}:${DEPLOY_PATH}/Dockerfile
 
-                        echo "[2/2] 서비스 재시작: ${SERVICE}"
+                        echo "[2/3] Docker 이미지 빌드"
                         ssh -i \${SSH_KEY} -o StrictHostKeyChecking=no \\
                             ${QA_USER}@\${QA_HOST} \\
-                            "sudo systemctl restart ${SERVICE}"
+                            "docker build -t ${SERVICE}:latest ${DEPLOY_PATH}"
+
+                        echo "[3/3] 컨테이너 재시작"
+                        ssh -i \${SSH_KEY} -o StrictHostKeyChecking=no \\
+                            ${QA_USER}@\${QA_HOST} \\
+                            "docker stop ${SERVICE} 2>/dev/null || true && \\
+                             docker rm ${SERVICE} 2>/dev/null || true && \\
+                             docker run -d \\
+                               --name ${SERVICE} \\
+                               --restart unless-stopped \\
+                               --network host \\
+                               -e SPRING_PROFILES_ACTIVE=qa \\
+                               -e SPRING_DATASOURCE_URL='jdbc:mysql://localhost:13307/porthos?characterEncoding=UTF-8&serverTimezone=Asia/Seoul&autoReconnect=true&rewriteBatchedStatements=true' \\
+                               -e SPRING_DATASOURCE_USERNAME=porthos \\
+                               -e SPRING_DATASOURCE_PASSWORD=porthos123! \\
+                               -e SPRING_DATA_REDIS_HOST=localhost \\
+                               -e SPRING_DATA_REDIS_PORT=16379 \\
+                               -e SPRING_DATA_REDIS_PASSWORD='noticore1!' \\
+                               -e SPRING_DATA_REDIS_USERNAME='' \\
+                               -e SPRING_DATA_REDIS_SSL_ENABLED=false \\
+                               ${SERVICE}:latest"
                     """
                 }
             }
