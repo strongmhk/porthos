@@ -49,6 +49,10 @@ public class RequestMatcherHolder {
         new RequestInfo(GET, "/webjars/**",null),
         new RequestInfo(GET, "/favicon.ico",null),
 
+        // load test
+        new RequestInfo(POST, "/api/load-test/**", null),
+        new RequestInfo(DELETE, "/api/load-test/**", null),
+
         // incidents
         new RequestInfo(GET, "/api/incidents/**",null),
         new RequestInfo(POST, "/api/incidents/**",null),

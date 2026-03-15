@@ -12,4 +12,6 @@ public interface IncidentInfoRepository extends JpaRepository<IncidentInfoEntity
         WHERE SIZE(i.groups) = 0
     """)
     List<IncidentInfoEntity> findAllWithNoGroups();
+
+    List<IncidentInfoEntity> findByTitleStartingWith(String prefix);
 }
