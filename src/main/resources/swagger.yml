@@ -1,0 +1,8 @@
+---
+spring.config.activate.on-profile: qa
+
+# Nginx /noticore prefix 대응
+springdoc:
+  swagger-ui:
+    config-url: /noticore/v3/api-docs/swagger-config
+    url: /noticore/v3/api-docs
