@@ -8,7 +8,6 @@ import com.swyp.noticore.domains.incident.application.event.NotificationEvent;
 import com.swyp.noticore.domains.incident.domain.service.*;
 import com.swyp.noticore.domains.incident.utils.EmailNoticeFormatter;
 import com.swyp.noticore.domains.member.application.dto.response.MemberInfo;
-import com.swyp.noticore.domains.member.application.mapper.MemberInfoMapper;
 import com.swyp.noticore.domains.member.domain.service.GroupMemberQueryService;
 import com.swyp.noticore.domains.incident.persistence.entity.IncidentInfoEntity;
 import com.swyp.noticore.global.annotation.architecture.UseCase;

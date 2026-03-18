@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Properties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
@@ -29,8 +30,9 @@ import software.amazon.awssdk.services.ses.model.SendRawEmailRequest;
 @Slf4j
 @Transactional
 @Service
+@Profile("prod")
 @RequiredArgsConstructor
-public class EmailService {
+public class EmailService implements EmailSender {
 
     private final SesClient sesClient = SesClient.builder()
         .region(Region.US_EAST_1)

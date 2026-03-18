@@ -1,13 +1,19 @@
 package com.swyp.noticore.domains.incident.application.usecase;
 
 import com.swyp.noticore.domains.incident.application.event.LoadTestNotificationEvent;
+import com.swyp.noticore.domains.incident.domain.service.EmailSender;
 import com.swyp.noticore.domains.incident.domain.service.IncidentCommandService;
+import com.swyp.noticore.domains.incident.domain.service.OncallSender;
+import com.swyp.noticore.domains.incident.domain.service.SmsSender;
 import com.swyp.noticore.domains.incident.persistence.repository.IncidentInfoRepository;
 import com.swyp.noticore.global.annotation.architecture.UseCase;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,14 +27,19 @@ public class LoadTestUseCase {
     private final IncidentCommandService incidentCommandService;
     private final IncidentInfoRepository incidentInfoRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final EmailSender emailSender;
+    private final SmsSender smsSender;
+    private final OncallSender oncallSender;
+    @Qualifier("channelExecutor")
+    private final Executor channelExecutor;
+
+    // ============================================================
+    // 1단계: 트랜잭션 분리 (DB 커넥션 점유 문제)
+    // ============================================================
 
     /**
-     * [Before 시나리오]
-     * @Transactional 안에서 DB 저장 + 알림 전송 지연을 모두 처리한다.
-     * → 알림 I/O가 완료될 때까지 DB 커넥션을 점유한다.
-     *
-     * 지연 공식: 300ms(Email) + memberCount × 200ms(SMS+OnCall+Slack per member)
-     * 기본값 members=3 → 900ms (문제 사례와 동일한 수치)
+     * [1단계 Before] 트랜잭션 내 알림 I/O 처리 — DB 커넥션 점유 문제 재현
+     * 응답 시간 ≈ 300 + members × 200 ms (members=3 기본값 → ~900ms)
      */
     @Transactional
     public void runBefore(int memberCount) {
@@ -51,9 +62,8 @@ public class LoadTestUseCase {
     }
 
     /**
-     * [After 시나리오]
-     * @Transactional 안에서 DB 저장만 처리하고, 알림은 AFTER_COMMIT 이벤트로 분리한다.
-     * → 트랜잭션 커밋 직후 DB 커넥션 반환, 알림은 별도 스레드에서 비동기 처리된다.
+     * [1단계 After] 트랜잭션 커밋 후 비동기 이벤트 기반 알림 처리 — 커넥션 즉시 반환
+     * 응답 시간 ≈ DB 저장 시간만 (~50-120ms)
      */
     @Transactional
     public void runAfter(int memberCount) {
@@ -69,6 +79,83 @@ public class LoadTestUseCase {
         // 트랜잭션 커밋 후 알림 이벤트 발행 — 커넥션 반환 이후에 리스너가 실행됨
         eventPublisher.publishEvent(new LoadTestNotificationEvent(memberCount));
     }
+
+    // ============================================================
+    // 2단계: 알림 채널 병렬화 (순차 vs 병렬 채널 실행)
+    // ============================================================
+
+    /**
+     * [2단계 Before] Email → SMS × n → OnCall × n 순차 실행
+     * 응답 시간 ≈ 300 + members × 150 + members × 150 ms
+     * (members=3 → 300 + 450 + 450 = 1,200ms)
+     */
+    public void runNotificationBefore(int memberCount) {
+        log.debug("[NOTIFICATION-BEFORE] 순차 알림 전송 시작, members={}", memberCount);
+
+        // Email — 수신자 전체에 1회 발송 (300ms)
+        emailSender.sendEmailAlert(null, List.of("mock@test.com"), "[LOAD_TEST] subject", "notice");
+
+        // SMS — 멤버당 1회 (150ms × n)
+        for (int i = 0; i < memberCount; i++) {
+            smsSender.sendSmsAlert("[LOAD_TEST] subject", "+821012345678");
+        }
+
+        // OnCall — 멤버당 1회 (150ms × n)
+        for (int i = 0; i < memberCount; i++) {
+            oncallSender.triggerOnCall("[LOAD_TEST] subject", "+821012345678");
+        }
+
+        log.debug("[NOTIFICATION-BEFORE] 순차 알림 전송 완료");
+    }
+
+    /**
+     * [2단계 After] Email / SMS × n / OnCall × n 을 CompletableFuture로 병렬 실행
+     * 응답 시간 ≈ max(300ms, members × 150ms, members × 150ms)
+     * (members=3 → max(300, 450, 450) = 450ms)
+     */
+    public void runNotificationAfter(int memberCount) {
+        log.debug("[NOTIFICATION-AFTER] 병렬 알림 전송 시작, members={}", memberCount);
+
+        CompletableFuture<Void> emailFuture = CompletableFuture.runAsync(
+                () -> emailSender.sendEmailAlert(null, List.of("mock@test.com"), "[LOAD_TEST] subject", "notice"),
+                channelExecutor
+        ).exceptionally(e -> {
+            log.error("[NOTIFICATION-AFTER] Email 전송 실패: {}", e.getMessage());
+            return null;
+        });
+
+        CompletableFuture<Void> smsFuture = CompletableFuture.runAsync(
+                () -> {
+                    for (int i = 0; i < memberCount; i++) {
+                        smsSender.sendSmsAlert("[LOAD_TEST] subject", "+821012345678");
+                    }
+                },
+                channelExecutor
+        ).exceptionally(e -> {
+            log.error("[NOTIFICATION-AFTER] SMS 전송 실패: {}", e.getMessage());
+            return null;
+        });
+
+        CompletableFuture<Void> oncallFuture = CompletableFuture.runAsync(
+                () -> {
+                    for (int i = 0; i < memberCount; i++) {
+                        oncallSender.triggerOnCall("[LOAD_TEST] subject", "+821012345678");
+                    }
+                },
+                channelExecutor
+        ).exceptionally(e -> {
+            log.error("[NOTIFICATION-AFTER] OnCall 전송 실패: {}", e.getMessage());
+            return null;
+        });
+
+        CompletableFuture.allOf(emailFuture, smsFuture, oncallFuture).join();
+
+        log.debug("[NOTIFICATION-AFTER] 병렬 알림 전송 완료");
+    }
+
+    // ============================================================
+    // 공통
+    // ============================================================
 
     /**
      * 부하 테스트로 생성된 더미 데이터를 일괄 삭제한다.

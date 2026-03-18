@@ -1,11 +1,11 @@
 package com.swyp.noticore.domains.incident.application.event;
 
 import com.slack.api.webhook.Payload;
-import com.swyp.noticore.domains.incident.domain.service.EmailService;
-import com.swyp.noticore.domains.incident.domain.service.OncallService;
+import com.swyp.noticore.domains.incident.domain.service.EmailSender;
+import com.swyp.noticore.domains.incident.domain.service.OncallSender;
 import com.swyp.noticore.domains.incident.domain.service.SlackMessageFormatter;
 import com.swyp.noticore.domains.incident.domain.service.SlackService;
-import com.swyp.noticore.domains.incident.domain.service.SmsService;
+import com.swyp.noticore.domains.incident.domain.service.SmsSender;
 import com.swyp.noticore.domains.member.application.mapper.MemberInfoMapper;
 import com.swyp.noticore.global.constants.NationNumber;
 import lombok.RequiredArgsConstructor;
@@ -20,9 +20,9 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @RequiredArgsConstructor
 public class NotificationEventListener {
 
-    private final EmailService emailService;
-    private final SmsService smsService;
-    private final OncallService onCallService;
+    private final EmailSender emailSender;
+    private final SmsSender smsSender;
+    private final OncallSender oncallSender;
     private final SlackService slackService;
     private final SlackMessageFormatter slackMessageFormatter;
 
@@ -30,7 +30,7 @@ public class NotificationEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleNotificationEvent(NotificationEvent event) {
         // Email 전송
-        emailService.sendEmailAlert(
+        emailSender.sendEmailAlert(
                 event.originalMessage(),
                 MemberInfoMapper.mapToEmailAddresses(event.allMembers()),
                 event.subject(),
@@ -40,12 +40,12 @@ public class NotificationEventListener {
         // SMS 전송
         MemberInfoMapper.mapToSmsRecipients(event.allMembers()).stream()
                 .map(phone -> NationNumber.KOREA.getValue() + phone.substring(1))
-                .forEach(phone -> smsService.sendSmsAlert(event.subject(), phone));
+                .forEach(phone -> smsSender.sendSmsAlert(event.subject(), phone));
 
         // OnCall 전송
         MemberInfoMapper.mapToOncallRecipients(event.allMembers()).stream()
                 .map(phone -> NationNumber.KOREA.getValue() + phone.substring(1))
-                .forEach(phone -> onCallService.triggerOnCall(event.subject(), phone));
+                .forEach(phone -> oncallSender.triggerOnCall(event.subject(), phone));
 
         // Slack 전송
         Payload slackPayload = slackMessageFormatter.formatGeneralErrorMessage(event.title());

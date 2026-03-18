@@ -17,9 +17,13 @@ public class LoadTestController {
 
     private final LoadTestUseCase loadTestUseCase;
 
+    // ============================================================
+    // 1단계: 트랜잭션 분리 (DB 커넥션 점유 문제)
+    // ============================================================
+
     /**
-     * [Before] 트랜잭션 내 알림 I/O 처리 — DB 커넥션 점유 문제 재현
-     * 응답 시간 ≈ 300 + members × 200 ms (members=3 기본값 → ~900ms)
+     * [1단계 Before] 트랜잭션 내 알림 I/O 처리 — DB 커넥션 점유 문제 재현
+     * 응답 시간 ≈ 300 + members × 200 ms (members=3 → ~900ms)
      */
     @PostMapping("/before")
     public ResponseEntity<Map<String, Object>> before(
@@ -27,14 +31,14 @@ public class LoadTestController {
         long start = System.currentTimeMillis();
         loadTestUseCase.runBefore(members);
         return ResponseEntity.ok(Map.of(
-                "scenario", "before",
+                "scenario", "1단계-before",
                 "members", members,
                 "durationMs", System.currentTimeMillis() - start
         ));
     }
 
     /**
-     * [After] 트랜잭션 커밋 후 비동기 이벤트 기반 알림 처리 — 커넥션 즉시 반환
+     * [1단계 After] 트랜잭션 커밋 후 비동기 이벤트 기반 알림 처리 — 커넥션 즉시 반환
      * 응답 시간 ≈ DB 저장 시간만 (~50-120ms)
      */
     @PostMapping("/after")
@@ -43,11 +47,53 @@ public class LoadTestController {
         long start = System.currentTimeMillis();
         loadTestUseCase.runAfter(members);
         return ResponseEntity.ok(Map.of(
-                "scenario", "after",
+                "scenario", "1단계-after",
                 "members", members,
                 "durationMs", System.currentTimeMillis() - start
         ));
     }
+
+    // ============================================================
+    // 2단계: 알림 채널 병렬화 (순차 vs 병렬 채널 실행)
+    // ============================================================
+
+    /**
+     * [2단계 Before] Email → SMS × n → OnCall × n 순차 실행
+     * 응답 시간 ≈ 300 + members × 150 + members × 150 ms
+     * (members=3 → ~1,200ms)
+     */
+    @PostMapping("/notification/before")
+    public ResponseEntity<Map<String, Object>> notificationBefore(
+            @RequestParam(defaultValue = "3") int members) {
+        long start = System.currentTimeMillis();
+        loadTestUseCase.runNotificationBefore(members);
+        return ResponseEntity.ok(Map.of(
+                "scenario", "2단계-before",
+                "members", members,
+                "durationMs", System.currentTimeMillis() - start
+        ));
+    }
+
+    /**
+     * [2단계 After] Email / SMS × n / OnCall × n 병렬 실행
+     * 응답 시간 ≈ max(300ms, members × 150ms, members × 150ms)
+     * (members=3 → ~450ms)
+     */
+    @PostMapping("/notification/after")
+    public ResponseEntity<Map<String, Object>> notificationAfter(
+            @RequestParam(defaultValue = "3") int members) {
+        long start = System.currentTimeMillis();
+        loadTestUseCase.runNotificationAfter(members);
+        return ResponseEntity.ok(Map.of(
+                "scenario", "2단계-after",
+                "members", members,
+                "durationMs", System.currentTimeMillis() - start
+        ));
+    }
+
+    // ============================================================
+    // 공통
+    // ============================================================
 
     /**
      * 부하 테스트로 생성된 더미 데이터 삭제
