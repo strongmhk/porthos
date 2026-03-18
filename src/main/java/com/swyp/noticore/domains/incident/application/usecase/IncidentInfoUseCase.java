@@ -1,10 +1,10 @@
 package com.swyp.noticore.domains.incident.application.usecase;
 
-import com.slack.api.webhook.Payload;
 import com.swyp.noticore.domains.incident.application.dto.response.IncidentDetailResponse;
 import com.swyp.noticore.domains.incident.application.dto.response.IncidentInfoResponse;
 import com.swyp.noticore.domains.incident.application.dto.response.MailContent;
 import com.swyp.noticore.domains.incident.application.dto.response.IncidentUpdateRequest;
+import com.swyp.noticore.domains.incident.application.event.NotificationEvent;
 import com.swyp.noticore.domains.incident.domain.service.*;
 import com.swyp.noticore.domains.incident.utils.EmailNoticeFormatter;
 import com.swyp.noticore.domains.member.application.dto.response.MemberInfo;
@@ -12,7 +12,6 @@ import com.swyp.noticore.domains.member.application.mapper.MemberInfoMapper;
 import com.swyp.noticore.domains.member.domain.service.GroupMemberQueryService;
 import com.swyp.noticore.domains.incident.persistence.entity.IncidentInfoEntity;
 import com.swyp.noticore.global.annotation.architecture.UseCase;
-import com.swyp.noticore.global.constants.NationNumber;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -22,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
@@ -36,12 +36,7 @@ public class IncidentInfoUseCase {
     private final IncidentCommandService incidentCommandService;
     private final IncidentQueryService incidentQueryService;
     private final NotificationLogCommandService notificationLogCommandService;
-    private final EmailService emailService;
-    private final SmsService smsService;
-    private final OncallService onCallService;
-    private final SlackService slackService;
-    private final SlackMessageFormatter slackMessageFormatter;
-    private final ResendNotificationService resendNotificationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public void processAndForward(Map<String, String> payload) {
         // 1. S3에서 .eml 파일 다운로드 및 파싱
@@ -92,35 +87,14 @@ public class IncidentInfoUseCase {
                 notificationLogCommandService.saveLog(incidentId, member.id())
         );
 
-        // 10. Email 전송
-        List<String> emailAddresses = MemberInfoMapper.mapToEmailAddresses(allMembers);
-        emailService.sendEmailAlert(mailContent.originalMessage(), emailAddresses, subject, noticeMessage);
-
-        // 11. SMS 전송
-        MemberInfoMapper.mapToSmsRecipients(allMembers).stream()
-                .map(this::formatKoreaPhoneNumber)
-                .forEach(phone -> smsService.sendSmsAlert(subject, phone));
-
-        // 12. OnCall 전송
-        MemberInfoMapper.mapToOncallRecipients(allMembers).stream()
-                .map(this::formatKoreaPhoneNumber)
-                .forEach(phone -> onCallService.triggerOnCall(subject, phone));
-
-        // 13. Slack 전송
-        Payload slackPayload = slackMessageFormatter.formatGeneralErrorMessage(title);
-        MemberInfoMapper.mapToSlackRecipients(allMembers).stream()
-                .forEach(url -> {
-                    try {
-                        slackService.sendSlackAlert(slackPayload, url);
-                    } catch (Exception e) {
-                        log.error("Failed to send Slack alert to {}: {}", url, e.getMessage());
-                    }
-                });
-
-        // // 14. 장애 확인 안 할 시 OnCall, SMS 반복 알림 (5분마다 총 세 번씩)
-        // for (MemberInfo member : allMembers) {
-        //     resendNotificationService.resendNotification(incidentId, member, subject);
-        // }
+        // 10. 알림 전송 이벤트 발행 (트랜잭션 커밋 후 비동기 처리)
+        eventPublisher.publishEvent(new NotificationEvent(
+                mailContent.originalMessage(),
+                subject,
+                title,
+                noticeMessage,
+                allMembers
+        ));
     }
 
     public List<IncidentInfoResponse> getIncidentInfosByCompletion(boolean completion) {
@@ -133,10 +107,6 @@ public class IncidentInfoUseCase {
 
     public void verifyIncident(Long incidentId, Long memberId) {
         notificationLogCommandService.markAsVerified(incidentId, memberId);
-    }
-
-    private String formatKoreaPhoneNumber(String phoneNumber) {
-        return NationNumber.KOREA.getValue() + phoneNumber.substring(1);
     }
 
     public void updateIncident(Long incidentId, IncidentUpdateRequest request) {
