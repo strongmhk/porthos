@@ -18,8 +18,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ResendNotificationService {
 
     private final NotificationLogQueryService notificationLogQueryService;
-    private final OncallService oncallService;
-    private final SmsService smsService;
+    private final OncallSender oncallService;
+    private final SmsSender smsService;
 
     @Transactional
     public void resendNotification (Long incidentId, MemberInfo member, String subject) {
