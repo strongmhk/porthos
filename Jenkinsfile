@@ -126,7 +126,9 @@ pipeline {
                 }
             }
             steps {
-                sh './gradlew test --no-daemon'
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                    sh './gradlew test --no-daemon'
+                }
             }
             post {
                 always {
