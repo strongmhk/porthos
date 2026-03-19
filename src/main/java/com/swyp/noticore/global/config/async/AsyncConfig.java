@@ -1,7 +1,6 @@
 package com.swyp.noticore.global.config.async;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -32,6 +31,12 @@ public class AsyncConfig {
      */
     @Bean(name = "channelExecutor")
     public Executor channelExecutor() {
-        return Executors.newFixedThreadPool(4);
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(4);
+        executor.setQueueCapacity(0);
+        executor.setThreadNamePrefix("channel-async-");
+        executor.initialize();
+        return executor;
     }
 }
