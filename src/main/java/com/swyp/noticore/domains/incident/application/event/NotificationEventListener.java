@@ -4,7 +4,7 @@ import com.slack.api.webhook.Payload;
 import com.swyp.noticore.domains.incident.domain.service.EmailSender;
 import com.swyp.noticore.domains.incident.domain.service.OncallSender;
 import com.swyp.noticore.domains.incident.domain.service.SlackMessageFormatter;
-import com.swyp.noticore.domains.incident.domain.service.SlackService;
+import com.swyp.noticore.domains.incident.domain.service.SlackSender;
 import com.swyp.noticore.domains.incident.domain.service.SmsSender;
 import com.swyp.noticore.domains.member.application.mapper.MemberInfoMapper;
 import com.swyp.noticore.global.constants.NationNumber;
@@ -23,7 +23,7 @@ public class NotificationEventListener {
     private final EmailSender emailSender;
     private final SmsSender smsSender;
     private final OncallSender oncallSender;
-    private final SlackService slackService;
+    private final SlackSender slackSender;
     private final SlackMessageFormatter slackMessageFormatter;
 
     @Async("notificationExecutor")
@@ -51,7 +51,7 @@ public class NotificationEventListener {
         Payload slackPayload = slackMessageFormatter.formatGeneralErrorMessage(event.title());
         MemberInfoMapper.mapToSlackRecipients(event.allMembers()).forEach(url -> {
             try {
-                slackService.sendSlackAlert(slackPayload, url);
+                slackSender.sendSlackAlert(slackPayload, url);
             } catch (Exception e) {
                 log.error("Failed to send Slack alert to {}: {}", url, e.getMessage());
             }
