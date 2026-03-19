@@ -4,6 +4,7 @@ import com.swyp.noticore.domains.incident.application.event.LoadTestNotification
 import com.swyp.noticore.domains.incident.domain.service.EmailSender;
 import com.swyp.noticore.domains.incident.domain.service.IncidentCommandService;
 import com.swyp.noticore.domains.incident.domain.service.OncallSender;
+import com.swyp.noticore.domains.incident.domain.service.SlackSender;
 import com.swyp.noticore.domains.incident.domain.service.SmsSender;
 import com.swyp.noticore.domains.incident.persistence.repository.IncidentInfoRepository;
 import com.swyp.noticore.global.annotation.architecture.UseCase;
@@ -30,6 +31,7 @@ public class LoadTestUseCase {
     private final EmailSender emailSender;
     private final SmsSender smsSender;
     private final OncallSender oncallSender;
+    private final SlackSender slackSender;
     @Qualifier("channelExecutor")
     private final Executor channelExecutor;
 
@@ -85,9 +87,9 @@ public class LoadTestUseCase {
     // ============================================================
 
     /**
-     * [2단계 Before] Email → SMS × n → OnCall × n 순차 실행
-     * 응답 시간 ≈ 300 + members × 150 + members × 150 ms
-     * (members=3 → 300 + 450 + 450 = 1,200ms)
+     * [2단계 Before] Email → SMS × n → OnCall × n → Slack 순차 실행
+     * 응답 시간 ≈ 300 + members × 150 + members × 150 + 100 ms
+     * (members=3 → 300 + 450 + 450 + 100 = 1,300ms)
      */
     public void runNotificationBefore(int memberCount) {
         log.debug("[NOTIFICATION-BEFORE] 순차 알림 전송 시작, members={}", memberCount);
@@ -105,13 +107,17 @@ public class LoadTestUseCase {
             oncallSender.triggerOnCall("[LOAD_TEST] subject", "+821012345678");
         }
 
+        // Slack — 채널에 1회 발송 (100ms)
+        slackSender.sendSlackAlert(null, "https://mock.slack.webhook");
+
         log.debug("[NOTIFICATION-BEFORE] 순차 알림 전송 완료");
     }
 
     /**
-     * [2단계 After] Email / SMS × n / OnCall × n 을 CompletableFuture로 병렬 실행
-     * 응답 시간 ≈ max(300ms, members × 150ms, members × 150ms)
-     * (members=3 → max(300, 450, 450) = 450ms)
+     * [2단계 After - 방향A] Email / SMS × n / OnCall × n / Slack 을 CompletableFuture로 병렬 실행 + .join()으로 결과 대기
+     * 응답 시간 ≈ max(300ms, members × 150ms, members × 150ms, 100ms)
+     * (members=3 → max(300, 450, 450, 100) = 450ms)
+     * channelExecutor 스레드가 충분할 때 순차 대비 효과 검증용
      */
     public void runNotificationAfter(int memberCount) {
         log.debug("[NOTIFICATION-AFTER] 병렬 알림 전송 시작, members={}", memberCount);
@@ -148,9 +154,68 @@ public class LoadTestUseCase {
             return null;
         });
 
-        CompletableFuture.allOf(emailFuture, smsFuture, oncallFuture).join();
+        CompletableFuture<Void> slackFuture = CompletableFuture.runAsync(
+                () -> slackSender.sendSlackAlert(null, "https://mock.slack.webhook"),
+                channelExecutor
+        ).exceptionally(e -> {
+            log.error("[NOTIFICATION-AFTER] Slack 전송 실패: {}", e.getMessage());
+            return null;
+        });
+
+        CompletableFuture.allOf(emailFuture, smsFuture, oncallFuture, slackFuture).join();
 
         log.debug("[NOTIFICATION-AFTER] 병렬 알림 전송 완료");
+    }
+
+    /**
+     * [2단계 After - 방향B] Email / SMS × n / OnCall × n / Slack 을 CompletableFuture로 병렬 실행 후 즉시 반환 (fire-and-forget)
+     * 응답 시간 ≈ task 제출 시간만 (~5ms)
+     * 실제 프로덕션 패턴: HTTP 응답은 즉시 반환, 알림은 백그라운드에서 처리
+     */
+    public void runNotificationAfterAsync(int memberCount) {
+        log.debug("[NOTIFICATION-AFTER-ASYNC] fire-and-forget 알림 전송 시작, members={}", memberCount);
+
+        CompletableFuture.runAsync(
+                () -> emailSender.sendEmailAlert(null, List.of("mock@test.com"), "[LOAD_TEST] subject", "notice"),
+                channelExecutor
+        ).exceptionally(e -> {
+            log.error("[NOTIFICATION-AFTER-ASYNC] Email 전송 실패: {}", e.getMessage());
+            return null;
+        });
+
+        CompletableFuture.runAsync(
+                () -> {
+                    for (int i = 0; i < memberCount; i++) {
+                        smsSender.sendSmsAlert("[LOAD_TEST] subject", "+821012345678");
+                    }
+                },
+                channelExecutor
+        ).exceptionally(e -> {
+            log.error("[NOTIFICATION-AFTER-ASYNC] SMS 전송 실패: {}", e.getMessage());
+            return null;
+        });
+
+        CompletableFuture.runAsync(
+                () -> {
+                    for (int i = 0; i < memberCount; i++) {
+                        oncallSender.triggerOnCall("[LOAD_TEST] subject", "+821012345678");
+                    }
+                },
+                channelExecutor
+        ).exceptionally(e -> {
+            log.error("[NOTIFICATION-AFTER-ASYNC] OnCall 전송 실패: {}", e.getMessage());
+            return null;
+        });
+
+        CompletableFuture.runAsync(
+                () -> slackSender.sendSlackAlert(null, "https://mock.slack.webhook"),
+                channelExecutor
+        ).exceptionally(e -> {
+            log.error("[NOTIFICATION-AFTER-ASYNC] Slack 전송 실패: {}", e.getMessage());
+            return null;
+        });
+
+        log.debug("[NOTIFICATION-AFTER-ASYNC] fire-and-forget 알림 전송 제출 완료");
     }
 
     // ============================================================

@@ -75,9 +75,9 @@ public class LoadTestController {
     }
 
     /**
-     * [2단계 After] Email / SMS × n / OnCall × n 병렬 실행
-     * 응답 시간 ≈ max(300ms, members × 150ms, members × 150ms)
-     * (members=3 → ~450ms)
+     * [2단계 After - 방향A] Email / SMS × n / OnCall × n / Slack 병렬 실행 + .join() 대기
+     * 응답 시간 ≈ max(300ms, members × 150ms, members × 150ms, 100ms)
+     * (members=3 → ~450ms) — channelExecutor 스레드 충분 시
      */
     @PostMapping("/notification/after")
     public ResponseEntity<Map<String, Object>> notificationAfter(
@@ -85,7 +85,23 @@ public class LoadTestController {
         long start = System.currentTimeMillis();
         loadTestUseCase.runNotificationAfter(members);
         return ResponseEntity.ok(Map.of(
-                "scenario", "2단계-after",
+                "scenario", "2단계-after-A",
+                "members", members,
+                "durationMs", System.currentTimeMillis() - start
+        ));
+    }
+
+    /**
+     * [2단계 After - 방향B] Email / SMS × n / OnCall × n / Slack 병렬 실행 후 즉시 반환 (fire-and-forget)
+     * 응답 시간 ≈ task 제출 시간만 (~5ms)
+     */
+    @PostMapping("/notification/after-async")
+    public ResponseEntity<Map<String, Object>> notificationAfterAsync(
+            @RequestParam(defaultValue = "3") int members) {
+        long start = System.currentTimeMillis();
+        loadTestUseCase.runNotificationAfterAsync(members);
+        return ResponseEntity.ok(Map.of(
+                "scenario", "2단계-after-B",
                 "members", members,
                 "durationMs", System.currentTimeMillis() - start
         ));
