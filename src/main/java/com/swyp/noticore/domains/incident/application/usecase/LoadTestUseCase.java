@@ -426,10 +426,14 @@ public class LoadTestUseCase {
             }
         }
 
-        // 3. 장애 + 장애그룹 + notification_log 생성
+        // 3. 장애 + 장애그룹 + notification_log 생성 (배치 저장)
         Long sampleIncidentId = null;
         Long sampleMemberId = allMembers.isEmpty() ? null : allMembers.get(0).getId();
         int totalNotificationLogs = 0;
+
+        int batchSize = 500;
+        List<IncidentGroupEntity> incidentGroupBatch = new ArrayList<>();
+        List<NotificationLogEntity> notificationLogBatch = new ArrayList<>();
 
         for (int i = 0; i < incidentCount; i++) {
             IncidentInfoEntity incident = IncidentInfoEntity.builder()
@@ -446,23 +450,37 @@ public class LoadTestUseCase {
             }
 
             for (GroupInfoEntity group : groups) {
-                IncidentGroupEntity incidentGroup = IncidentGroupEntity.builder()
+                incidentGroupBatch.add(IncidentGroupEntity.builder()
                         .incident(incident)
                         .groupInfo(group)
-                        .build();
-                incidentGroupRepository.save(incidentGroup);
+                        .build());
             }
 
             for (MemberEntity member : allMembers) {
-                NotificationLogEntity notifLog = NotificationLogEntity.builder()
+                notificationLogBatch.add(NotificationLogEntity.builder()
                         .incident(incident)
                         .member(member)
                         .isVerified(false)
                         .retryCount(0)
-                        .build();
-                notificationLogRepository.save(notifLog);
+                        .build());
                 totalNotificationLogs++;
             }
+
+            // 배치 크기에 도달하면 flush
+            if (notificationLogBatch.size() >= batchSize) {
+                incidentGroupRepository.saveAll(incidentGroupBatch);
+                notificationLogRepository.saveAll(notificationLogBatch);
+                incidentGroupBatch.clear();
+                notificationLogBatch.clear();
+            }
+        }
+
+        // 남은 데이터 flush
+        if (!incidentGroupBatch.isEmpty()) {
+            incidentGroupRepository.saveAll(incidentGroupBatch);
+        }
+        if (!notificationLogBatch.isEmpty()) {
+            notificationLogRepository.saveAll(notificationLogBatch);
         }
 
         long durationMs = System.currentTimeMillis() - start;
