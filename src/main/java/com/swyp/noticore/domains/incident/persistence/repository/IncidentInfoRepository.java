@@ -14,4 +14,6 @@ public interface IncidentInfoRepository extends JpaRepository<IncidentInfoEntity
     List<IncidentInfoEntity> findAllWithNoGroups();
 
     List<IncidentInfoEntity> findByTitleStartingWith(String prefix);
+
+    long countByS3Uuid(String s3Uuid);
 }

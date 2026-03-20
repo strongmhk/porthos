@@ -9,15 +9,24 @@ import com.swyp.noticore.domains.incident.domain.service.SmsSender;
 import com.swyp.noticore.domains.incident.persistence.repository.IncidentInfoRepository;
 import com.swyp.noticore.global.annotation.architecture.UseCase;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.context.annotation.Profile;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+@Profile("!prod")
 @Slf4j
 @UseCase
 @RequiredArgsConstructor
@@ -216,6 +225,129 @@ public class LoadTestUseCase {
         });
 
         log.debug("[NOTIFICATION-AFTER-ASYNC] fire-and-forget 알림 전송 제출 완료");
+    }
+
+    // ============================================================
+    // 3단계: 장애 중복 등록 방지 (Idempotency)
+    // ============================================================
+
+    /**
+     * [3단계 Before] 동일 s3_uuid 동시 요청 시 중복 등록 문제 재현
+     * unique constraint 없는 상태: concurrency개 모두 성공 → DB에 중복 row 생성
+     * unique constraint 있는 상태: 1개만 성공, 나머지는 errorCount로 집계
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public Map<String, Object> runIdempotencyBefore(int concurrency) {
+        long start = System.currentTimeMillis();
+        String testUuid = "load-test-idempotency-" + UUID.randomUUID();
+
+        CountDownLatch readyLatch = new CountDownLatch(concurrency);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        AtomicInteger successCount = new AtomicInteger(0);
+        AtomicInteger errorCount = new AtomicInteger(0);
+
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+        for (int i = 0; i < concurrency; i++) {
+            futures.add(CompletableFuture.runAsync(() -> {
+                readyLatch.countDown();
+                try { startLatch.await(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                try {
+                    incidentCommandService.saveIncidentAndGroups(
+                            "idempotency test body",
+                            LOAD_TEST_PREFIX + " idempotency-before",
+                            testUuid,
+                            List.of()
+                    );
+                    successCount.incrementAndGet();
+                } catch (Exception e) {
+                    errorCount.incrementAndGet();
+                    log.warn("[IDEMPOTENCY-BEFORE] Save failed: {}", e.getMessage());
+                }
+            }, channelExecutor));
+        }
+
+        try { readyLatch.await(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        startLatch.countDown();
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        long dbRowCount = incidentInfoRepository.countByS3Uuid(testUuid);
+        long durationMs = System.currentTimeMillis() - start;
+
+        log.info("[IDEMPOTENCY-BEFORE] concurrency={}, success={}, error={}, dbRows={}",
+                concurrency, successCount.get(), errorCount.get(), dbRowCount);
+
+        return Map.of(
+                "scenario", "3단계-before",
+                "testS3Uuid", testUuid,
+                "concurrency", concurrency,
+                "successCount", successCount.get(),
+                "duplicateCount", 0,
+                "errorCount", errorCount.get(),
+                "actualDbRowCount", dbRowCount,
+                "durationMs", durationMs
+        );
+    }
+
+    /**
+     * [3단계 After] unique constraint + DataIntegrityViolationException 처리로 중복 방지
+     * 동일 s3_uuid로 concurrency개 동시 저장 → 1개만 성공, 나머지는 duplicate 처리
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public Map<String, Object> runIdempotencyAfter(int concurrency) {
+        long start = System.currentTimeMillis();
+        String testUuid = "load-test-idempotency-" + UUID.randomUUID();
+
+        CountDownLatch readyLatch = new CountDownLatch(concurrency);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        AtomicInteger successCount = new AtomicInteger(0);
+        AtomicInteger duplicateCount = new AtomicInteger(0);
+        AtomicInteger errorCount = new AtomicInteger(0);
+
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+        for (int i = 0; i < concurrency; i++) {
+            futures.add(CompletableFuture.runAsync(() -> {
+                readyLatch.countDown();
+                try { startLatch.await(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                try {
+                    incidentCommandService.saveIncidentAndGroups(
+                            "idempotency test body",
+                            LOAD_TEST_PREFIX + " idempotency-after",
+                            testUuid,
+                            List.of()
+                    );
+                    successCount.incrementAndGet();
+                } catch (DataIntegrityViolationException e) {
+                    duplicateCount.incrementAndGet();
+                    log.info("[IDEMPOTENCY-AFTER] Duplicate caught for s3_uuid={}", testUuid);
+                } catch (Exception e) {
+                    errorCount.incrementAndGet();
+                    log.error("[IDEMPOTENCY-AFTER] Unexpected error: {}", e.getMessage());
+                }
+            }, channelExecutor));
+        }
+
+        try { readyLatch.await(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        startLatch.countDown();
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        long dbRowCount = incidentInfoRepository.countByS3Uuid(testUuid);
+        long durationMs = System.currentTimeMillis() - start;
+
+        log.info("[IDEMPOTENCY-AFTER] concurrency={}, success={}, duplicate={}, error={}, dbRows={}",
+                concurrency, successCount.get(), duplicateCount.get(), errorCount.get(), dbRowCount);
+
+        return Map.of(
+                "scenario", "3단계-after",
+                "testS3Uuid", testUuid,
+                "concurrency", concurrency,
+                "successCount", successCount.get(),
+                "duplicateCount", duplicateCount.get(),
+                "errorCount", errorCount.get(),
+                "actualDbRowCount", dbRowCount,
+                "durationMs", durationMs
+        );
     }
 
     // ============================================================

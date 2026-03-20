@@ -8,8 +8,10 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.RestController;
 
+@Profile("!prod")
 @RestController
 @RequestMapping("/api/load-test")
 @RequiredArgsConstructor
@@ -105,6 +107,30 @@ public class LoadTestController {
                 "members", members,
                 "durationMs", System.currentTimeMillis() - start
         ));
+    }
+
+    // ============================================================
+    // 3단계: 장애 중복 등록 방지 (Idempotency)
+    // ============================================================
+
+    /**
+     * [3단계 Before] 동일 s3_uuid 동시 요청 시 중복 등록 문제 재현
+     * unique constraint 없는 상태에서 concurrency개의 동시 저장 → 모두 성공 (중복 생성)
+     */
+    @PostMapping("/idempotency/before")
+    public ResponseEntity<Map<String, Object>> idempotencyBefore(
+            @RequestParam(defaultValue = "10") int concurrency) {
+        return ResponseEntity.ok(loadTestUseCase.runIdempotencyBefore(concurrency));
+    }
+
+    /**
+     * [3단계 After] unique constraint + DataIntegrityViolationException 처리로 중복 방지
+     * concurrency개의 동시 저장 → 1개만 성공, 나머지는 duplicate로 처리
+     */
+    @PostMapping("/idempotency/after")
+    public ResponseEntity<Map<String, Object>> idempotencyAfter(
+            @RequestParam(defaultValue = "10") int concurrency) {
+        return ResponseEntity.ok(loadTestUseCase.runIdempotencyAfter(concurrency));
     }
 
     // ============================================================
