@@ -282,7 +282,6 @@ public class LoadTestUseCase {
 
         return Map.of(
                 "scenario", "3단계-before",
-                "testS3Uuid", testUuid,
                 "concurrency", concurrency,
                 "successCount", successCount.get(),
                 "duplicateCount", 0,
