@@ -239,7 +239,6 @@ public class LoadTestUseCase {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public Map<String, Object> runIdempotencyBefore(int concurrency) {
         long start = System.currentTimeMillis();
-        String testUuid = "load-test-idempotency-" + UUID.randomUUID();
 
         CountDownLatch readyLatch = new CountDownLatch(concurrency);
         CountDownLatch startLatch = new CountDownLatch(1);
@@ -249,13 +248,16 @@ public class LoadTestUseCase {
         List<CompletableFuture<Void>> futures = new ArrayList<>();
         for (int i = 0; i < concurrency; i++) {
             futures.add(CompletableFuture.runAsync(() -> {
+                // 스레드마다 고유한 UUID 생성 — unique constraint 없던 시절의 동작 재현
+                // Lambda 재전달마다 새 row가 생성되는 문제를 시뮬레이션
+                String ownUuid = "load-test-idempotency-" + UUID.randomUUID();
                 readyLatch.countDown();
                 try { startLatch.await(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
                 try {
                     incidentCommandService.saveIncidentAndGroups(
                             "idempotency test body",
-                            LOAD_TEST_PREFIX + " idempotency-before",
-                            testUuid,
+                            LOAD_TEST_PREFIX + " idempotency-before " + ownUuid,
+                            ownUuid,
                             List.of()
                     );
                     successCount.incrementAndGet();
@@ -271,7 +273,8 @@ public class LoadTestUseCase {
 
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
-        long dbRowCount = incidentInfoRepository.countByS3Uuid(testUuid);
+        // successCount = DB에 실제 생성된 row 수 (각 스레드가 다른 UUID 사용)
+        long dbRowCount = successCount.get();
         long durationMs = System.currentTimeMillis() - start;
 
         log.info("[IDEMPOTENCY-BEFORE] concurrency={}, success={}, error={}, dbRows={}",
