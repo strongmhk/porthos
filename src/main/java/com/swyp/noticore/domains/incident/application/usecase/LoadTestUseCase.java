@@ -6,10 +6,25 @@ import com.swyp.noticore.domains.incident.domain.service.IncidentCommandService;
 import com.swyp.noticore.domains.incident.domain.service.OncallSender;
 import com.swyp.noticore.domains.incident.domain.service.SlackSender;
 import com.swyp.noticore.domains.incident.domain.service.SmsSender;
+import com.swyp.noticore.domains.incident.persistence.entity.IncidentGroupEntity;
+import com.swyp.noticore.domains.incident.persistence.entity.IncidentInfoEntity;
+import com.swyp.noticore.domains.incident.persistence.entity.NotificationLogEntity;
+import com.swyp.noticore.domains.incident.persistence.repository.IncidentGroupRepository;
 import com.swyp.noticore.domains.incident.persistence.repository.IncidentInfoRepository;
+import com.swyp.noticore.domains.incident.persistence.repository.NotificationLogRepository;
+import com.swyp.noticore.domains.member.domain.constant.Role;
+import com.swyp.noticore.domains.member.persistence.entity.GroupInfoEntity;
+import com.swyp.noticore.domains.member.persistence.entity.MemberEntity;
+import com.swyp.noticore.domains.member.persistence.entity.MemberGroupEntity;
+import com.swyp.noticore.domains.member.persistence.entity.MemberMetadataEntity;
+import com.swyp.noticore.domains.member.persistence.repository.GroupInfoRepository;
+import com.swyp.noticore.domains.member.persistence.repository.MemberGroupRepository;
+import com.swyp.noticore.domains.member.persistence.repository.MemberRepository;
 import com.swyp.noticore.global.annotation.architecture.UseCase;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -36,6 +51,11 @@ public class LoadTestUseCase {
 
     private final IncidentCommandService incidentCommandService;
     private final IncidentInfoRepository incidentInfoRepository;
+    private final IncidentGroupRepository incidentGroupRepository;
+    private final NotificationLogRepository notificationLogRepository;
+    private final GroupInfoRepository groupInfoRepository;
+    private final MemberRepository memberRepository;
+    private final MemberGroupRepository memberGroupRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final EmailSender emailSender;
     private final SmsSender smsSender;
@@ -350,6 +370,276 @@ public class LoadTestUseCase {
                 "actualDbRowCount", dbRowCount,
                 "durationMs", durationMs
         );
+    }
+
+    // ============================================================
+    // 4단계: 장애 목록 조회 성능 개선 (인덱스 + N+1 해결)
+    // ============================================================
+
+    /**
+     * [4단계 Setup] 테스트 데이터 시딩
+     * 그룹, 멤버, 장애, notification_log를 대량 생성한다.
+     */
+    @Transactional
+    public Map<String, Object> setupQueryTestData(int incidentCount, int groupCount, int memberPerGroup) {
+        long start = System.currentTimeMillis();
+
+        // 1. 그룹 생성
+        List<GroupInfoEntity> groups = new ArrayList<>();
+        for (int i = 0; i < groupCount; i++) {
+            GroupInfoEntity group = GroupInfoEntity.builder()
+                    .name(LOAD_TEST_PREFIX + " group-" + i)
+                    .build();
+            groups.add(groupInfoRepository.save(group));
+        }
+
+        // 2. 멤버 + 메타데이터 + 멤버그룹 생성
+        List<MemberEntity> allMembers = new ArrayList<>();
+        int memberIndex = 0;
+        for (GroupInfoEntity group : groups) {
+            for (int j = 0; j < memberPerGroup; j++) {
+                MemberMetadataEntity metadata = MemberMetadataEntity.builder()
+                        .slackUrl("https://mock.slack/" + memberIndex)
+                        .slackNoti(true)
+                        .smsNoti(true)
+                        .oncallNoti(true)
+                        .build();
+
+                MemberEntity member = MemberEntity.builder()
+                        .memberMetadata(metadata)
+                        .role(Role.USER)
+                        .email(LOAD_TEST_PREFIX + "-" + memberIndex + "@test.com")
+                        .password("test1234")
+                        .name(LOAD_TEST_PREFIX + " member-" + memberIndex)
+                        .phone("+8210" + String.format("%08d", memberIndex))
+                        .build();
+                member = memberRepository.save(member);
+                allMembers.add(member);
+
+                MemberGroupEntity memberGroup = MemberGroupEntity.builder()
+                        .member(member)
+                        .groupInfo(group)
+                        .build();
+                memberGroupRepository.save(memberGroup);
+
+                memberIndex++;
+            }
+        }
+
+        // 3. 장애 + 장애그룹 + notification_log 생성
+        Long sampleIncidentId = null;
+        Long sampleMemberId = allMembers.isEmpty() ? null : allMembers.get(0).getId();
+        int totalNotificationLogs = 0;
+
+        for (int i = 0; i < incidentCount; i++) {
+            IncidentInfoEntity incident = IncidentInfoEntity.builder()
+                    .s3Uuid("load-test-query-" + UUID.randomUUID())
+                    .rawBody("load test body")
+                    .title(LOAD_TEST_PREFIX + " incident-" + i)
+                    .completion(false)
+                    .registrationTime(LocalDateTime.now())
+                    .build();
+            incident = incidentInfoRepository.save(incident);
+
+            if (sampleIncidentId == null) {
+                sampleIncidentId = incident.getId();
+            }
+
+            for (GroupInfoEntity group : groups) {
+                IncidentGroupEntity incidentGroup = IncidentGroupEntity.builder()
+                        .incident(incident)
+                        .groupInfo(group)
+                        .build();
+                incidentGroupRepository.save(incidentGroup);
+            }
+
+            for (MemberEntity member : allMembers) {
+                NotificationLogEntity notifLog = NotificationLogEntity.builder()
+                        .incident(incident)
+                        .member(member)
+                        .isVerified(false)
+                        .retryCount(0)
+                        .build();
+                notificationLogRepository.save(notifLog);
+                totalNotificationLogs++;
+            }
+        }
+
+        long durationMs = System.currentTimeMillis() - start;
+        log.info("[QUERY-SETUP] incidents={}, groups={}, members={}, notificationLogs={}, duration={}ms",
+                incidentCount, groupCount, allMembers.size(), totalNotificationLogs, durationMs);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("scenario", "4단계-setup");
+        result.put("incidentCount", incidentCount);
+        result.put("groupCount", groupCount);
+        result.put("memberPerGroup", memberPerGroup);
+        result.put("totalMembers", allMembers.size());
+        result.put("totalNotificationLogs", totalNotificationLogs);
+        result.put("sampleIncidentId", sampleIncidentId);
+        result.put("sampleMemberId", sampleMemberId);
+        result.put("durationMs", durationMs);
+        return result;
+    }
+
+    /**
+     * [4단계] notification_log verify 쿼리 성능 측정
+     * findByIncidentIdAndMemberId를 iterations회 반복 호출하여 평균 시간을 측정한다.
+     * 인덱스 유무에 따라 성능 차이가 발생한다.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> runVerifyQuery(String scenario, Long incidentId, Long memberId, int iterations) {
+        // warm-up
+        notificationLogRepository.findByIncidentIdAndMemberId(incidentId, memberId);
+
+        long start = System.nanoTime();
+        boolean found = false;
+        for (int i = 0; i < iterations; i++) {
+            found = notificationLogRepository.findByIncidentIdAndMemberId(incidentId, memberId).isPresent();
+        }
+        long totalNs = System.nanoTime() - start;
+        double totalMs = totalNs / 1_000_000.0;
+        double avgMs = totalMs / iterations;
+
+        log.info("[{}] incidentId={}, memberId={}, iterations={}, totalMs={}, avgMs={}, found={}",
+                scenario, incidentId, memberId, iterations, String.format("%.2f", totalMs), String.format("%.4f", avgMs), found);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("scenario", scenario);
+        result.put("incidentId", incidentId);
+        result.put("memberId", memberId);
+        result.put("iterations", iterations);
+        result.put("totalMs", Math.round(totalMs * 100.0) / 100.0);
+        result.put("avgMs", Math.round(avgMs * 10000.0) / 10000.0);
+        result.put("found", found);
+        return result;
+    }
+
+    /**
+     * [4단계 Before] N+1 쿼리 시뮬레이션 — 장애별로 개별 쿼리 실행
+     * 장애 목록 → 각 장애의 그룹 → 각 그룹의 멤버 → 각 멤버의 notification_log 순서로 개별 조회
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> runListBefore(int iterations) {
+        long totalMs = 0;
+        int queryCount = 0;
+        int incidentCount = 0;
+
+        for (int iter = 0; iter < iterations; iter++) {
+            long start = System.nanoTime();
+            int iterQueryCount = 0;
+
+            // 1. 장애 목록 조회 (1회)
+            List<IncidentInfoEntity> incidents = incidentInfoRepository.findByTitleStartingWith(LOAD_TEST_PREFIX);
+            iterQueryCount++;
+            incidentCount = incidents.size();
+
+            for (IncidentInfoEntity incident : incidents) {
+                // 2. 각 장애의 그룹 조회 (N회)
+                List<IncidentGroupEntity> incidentGroups = incidentGroupRepository.findByIncidentId(incident.getId());
+                iterQueryCount++;
+
+                for (IncidentGroupEntity ig : incidentGroups) {
+                    // 3. 각 그룹의 멤버 조회 (N×G회)
+                    List<MemberGroupEntity> memberGroups = memberGroupRepository.findByGroupInfoId(ig.getGroupInfo().getId());
+                    iterQueryCount++;
+
+                    for (MemberGroupEntity mg : memberGroups) {
+                        // 4. 각 멤버의 알림 확인 여부 조회 (N×G×M회)
+                        notificationLogRepository.findByIncidentIdAndMemberId(incident.getId(), mg.getMember().getId());
+                        iterQueryCount++;
+                    }
+                }
+            }
+
+            totalMs += (System.nanoTime() - start) / 1_000_000;
+            queryCount = iterQueryCount;
+        }
+
+        double avgMs = (double) totalMs / iterations;
+
+        log.info("[LIST-BEFORE] incidents={}, queryCount={}, totalMs={}, avgMs={}",
+                incidentCount, queryCount, totalMs, String.format("%.2f", avgMs));
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("scenario", "4단계-list-before");
+        result.put("incidentCount", incidentCount);
+        result.put("queryCount", queryCount);
+        result.put("iterations", iterations);
+        result.put("totalMs", totalMs);
+        result.put("avgMs", Math.round(avgMs * 100.0) / 100.0);
+        return result;
+    }
+
+    /**
+     * [4단계 After] QueryDSL 단일 조인 쿼리 — 장애 목록 + 그룹 + 멤버 + 알림 확인 여부를 1회 쿼리로 조회
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> runListAfter(int iterations) {
+        long totalMs = 0;
+        int incidentCount = 0;
+
+        for (int iter = 0; iter < iterations; iter++) {
+            long start = System.nanoTime();
+
+            var results = incidentInfoRepository.findIncidentInfosByCompletion(false);
+            incidentCount = results.size();
+
+            totalMs += (System.nanoTime() - start) / 1_000_000;
+        }
+
+        double avgMs = (double) totalMs / iterations;
+
+        log.info("[LIST-AFTER] incidents={}, queryCount=1, totalMs={}, avgMs={}",
+                incidentCount, totalMs, String.format("%.2f", avgMs));
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("scenario", "4단계-list-after");
+        result.put("incidentCount", incidentCount);
+        result.put("queryCount", 1);
+        result.put("iterations", iterations);
+        result.put("totalMs", totalMs);
+        result.put("avgMs", Math.round(avgMs * 100.0) / 100.0);
+        return result;
+    }
+
+    /**
+     * [4단계] 쿼리 성능 테스트 데이터 정리
+     */
+    @Transactional
+    public Map<String, Object> cleanupQueryTestData() {
+        // 1. 로드테스트 장애 ID 조회
+        List<IncidentInfoEntity> testIncidents = incidentInfoRepository.findByTitleStartingWith(LOAD_TEST_PREFIX);
+        List<Long> incidentIds = testIncidents.stream().map(IncidentInfoEntity::getId).toList();
+
+        // 2. notification_log 삭제
+        int deletedLogs = 0;
+        if (!incidentIds.isEmpty()) {
+            notificationLogRepository.deleteByIncidentIdIn(incidentIds);
+            deletedLogs = incidentIds.size(); // 근사치
+        }
+
+        // 3. 장애 삭제 (incident_group은 cascade로 삭제됨)
+        incidentInfoRepository.deleteAllByIdInBatch(incidentIds);
+
+        // 4. 로드테스트 멤버 삭제 (member_group은 cascade로 삭제됨)
+        List<MemberEntity> testMembers = memberRepository.findByNameStartingWith(LOAD_TEST_PREFIX);
+        List<Long> memberIds = testMembers.stream().map(MemberEntity::getId).toList();
+        memberRepository.deleteAllByIdInBatch(memberIds);
+
+        // 5. 로드테스트 그룹 삭제
+        List<GroupInfoEntity> testGroups = groupInfoRepository.findByNameStartingWith(LOAD_TEST_PREFIX);
+        List<Long> groupIds = testGroups.stream().map(GroupInfoEntity::getId).toList();
+        groupInfoRepository.deleteAllByIdInBatch(groupIds);
+
+        log.info("[QUERY-CLEANUP] incidents={}, members={}, groups={}",
+                incidentIds.size(), memberIds.size(), groupIds.size());
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("deletedIncidents", incidentIds.size());
+        result.put("deletedMembers", memberIds.size());
+        result.put("deletedGroups", groupIds.size());
+        return result;
     }
 
     // ============================================================

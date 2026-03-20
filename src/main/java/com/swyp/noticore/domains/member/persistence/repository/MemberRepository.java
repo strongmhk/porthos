@@ -1,6 +1,7 @@
 package com.swyp.noticore.domains.member.persistence.repository;
 
 import com.swyp.noticore.domains.member.persistence.entity.MemberEntity;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -39,4 +40,6 @@ public interface MemberRepository extends JpaRepository<MemberEntity, Long> {
         @Param("name") String name,
         @Param("email") String email
     );
+
+    List<MemberEntity> findByNameStartingWith(String prefix);
 }

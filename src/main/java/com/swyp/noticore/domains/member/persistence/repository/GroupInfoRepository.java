@@ -16,4 +16,6 @@ public interface GroupInfoRepository extends JpaRepository<GroupInfoEntity, Long
     List<GroupInfoEntity> findByNameIn(List<String> names);
 
     Optional<GroupInfoEntity> findByName(String name);
+
+    List<GroupInfoEntity> findByNameStartingWith(String prefix);
 }

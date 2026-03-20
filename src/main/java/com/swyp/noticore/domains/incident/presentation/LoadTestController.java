@@ -134,6 +134,62 @@ public class LoadTestController {
     }
 
     // ============================================================
+    // 4단계: 장애 목록 조회 성능 개선 (인덱스 + N+1 해결)
+    // ============================================================
+
+    /**
+     * [4단계 Setup] 테스트 데이터 시딩 — 그룹, 멤버, 장애, notification_log 대량 생성
+     */
+    @PostMapping("/query/setup")
+    public ResponseEntity<Map<String, Object>> querySetup(
+            @RequestParam(defaultValue = "50") int incidentCount,
+            @RequestParam(defaultValue = "3") int groupCount,
+            @RequestParam(defaultValue = "5") int memberPerGroup) {
+        return ResponseEntity.ok(loadTestUseCase.setupQueryTestData(incidentCount, groupCount, memberPerGroup));
+    }
+
+    /**
+     * [4단계] notification_log verify 쿼리 성능 측정
+     * 인덱스 생성 전/후에 각각 실행하여 응답 시간 비교
+     */
+    @PostMapping("/query/verify")
+    public ResponseEntity<Map<String, Object>> queryVerify(
+            @RequestParam Long incidentId,
+            @RequestParam Long memberId,
+            @RequestParam(defaultValue = "100") int iterations,
+            @RequestParam(defaultValue = "4단계-verify") String scenario) {
+        return ResponseEntity.ok(loadTestUseCase.runVerifyQuery(scenario, incidentId, memberId, iterations));
+    }
+
+    /**
+     * [4단계 Before] N+1 쿼리 시뮬레이션 — 장애별 개별 쿼리로 목록 조회
+     * queryCount = 1 + N + N×G + N×G×M (장애 50건, 그룹 3, 멤버 5 → 1 + 50 + 150 + 750 = 951)
+     */
+    @PostMapping("/query/list-before")
+    public ResponseEntity<Map<String, Object>> queryListBefore(
+            @RequestParam(defaultValue = "10") int iterations) {
+        return ResponseEntity.ok(loadTestUseCase.runListBefore(iterations));
+    }
+
+    /**
+     * [4단계 After] QueryDSL 단일 조인 쿼리로 목록 조회
+     * queryCount = 1 (항상)
+     */
+    @PostMapping("/query/list-after")
+    public ResponseEntity<Map<String, Object>> queryListAfter(
+            @RequestParam(defaultValue = "10") int iterations) {
+        return ResponseEntity.ok(loadTestUseCase.runListAfter(iterations));
+    }
+
+    /**
+     * [4단계] 쿼리 성능 테스트 데이터 정리
+     */
+    @DeleteMapping("/query/cleanup")
+    public ResponseEntity<Map<String, Object>> queryCleanup() {
+        return ResponseEntity.ok(loadTestUseCase.cleanupQueryTestData());
+    }
+
+    // ============================================================
     // 공통
     // ============================================================
 

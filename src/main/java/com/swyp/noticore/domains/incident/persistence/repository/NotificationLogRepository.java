@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface NotificationLogRepository extends JpaRepository<NotificationLogEntity, Long> {
     Optional<NotificationLogEntity> findByIncidentIdAndMemberId(Long incidentId, Long memberId);
+
+    void deleteByIncidentIdIn(java.util.List<Long> incidentIds);
 }
